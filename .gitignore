@@ -1,0 +1,17 @@
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# C++ Build Artifacts
+app
+*.o
+*.out
+
+# Node / npm
+node_modules/
+.wrangler/
+package-lock.json
+
+# Logs
+*.log

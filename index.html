@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HYGR Material Requirement Calculator & Stock Card Prototype</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-wrapper">
+
+    <!-- ==========================================
+         SYSTEM HEADER (Title & Quick Actions)
+         ========================================== -->
+    <header class="system-header">
+      <div class="brand-section">
+        <div class="brand-logo-badge">HYGR</div>
+        <div>
+          <h1 class="brand-title">Material Requirement Calculator & Stock Card System</h1>
+          <p class="brand-subtitle">Industrial Minimalism WMS/ERP Prototype &bull; Standard Formulation 5g Unit Size</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary btn-sm" id="btn-export-menu" onclick="exportData('both')">
+          <span>↓</span> Export CSV
+        </button>
+        <button class="btn btn-secondary btn-sm" id="btn-reset-data" onclick="resetDatabase()">
+          <span>↺</span> Reset Seed Data
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="openStockModal()">
+          <span>+</span> Stock IN / OUT
+        </button>
+      </div>
+    </header>
+
+    <!-- ==========================================
+         MAIN SPLIT VIEW (25% Left / 75% Right)
+         ========================================== -->
+    <div class="split-view-container">
+
+      <!-- LEFT PANE: NAVIGATION & ACTIVE PLANNING CONTEXT (25%) -->
+      <aside class="left-pane">
+
+        <!-- Navigation Tabs Menu -->
+        <nav class="nav-tabs-menu" aria-label="System Views">
+          <button class="nav-tab-btn active" id="tab-btn-bom" onclick="switchView('bom')">
+            <span>1. Live BOM Calculator</span>
+            <span class="badge-count" id="badge-shortage-count">0</span>
+          </button>
+          <button class="nav-tab-btn" id="tab-btn-ledger" onclick="switchView('ledger')">
+            <span>2. Stock Card Ledger</span>
+            <span class="badge-count" id="badge-ledger-count">0</span>
+          </button>
+          <button class="nav-tab-btn" id="tab-btn-master" onclick="switchView('master')">
+            <span>3. Stock Health & SCM Radar</span>
+            <span class="badge-count" id="badge-reorder-count">0</span>
+          </button>
+          <button class="nav-tab-btn" id="tab-btn-batches" onclick="switchView('batches')">
+            <span>4. Production Batches</span>
+            <span class="badge-count" id="badge-batch-count">0</span>
+          </button>
+        </nav>
+
+        <!-- Active Product Card -->
+        <div class="card-level-1">
+          <div class="card-header">
+            <span class="card-title">Active Finished Product</span>
+            <span class="status-chip chip-info" id="active-sku-badge">FG-LB015/109</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="product-select">Select Product Recipe</label>
+            <select class="select-field" id="product-select" onchange="onProductChange(this.value)">
+              <!-- Populated dynamically via JS -->
+            </select>
+          </div>
+          <p class="body-md" id="product-desc" style="color: var(--on-surface-variant); font-size: 12px;">
+            Standard 5g lip balm paper packaging.
+          </p>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--surface-container-high);">
+            <span class="body-md" style="color: var(--on-surface-variant); font-size: 12px;">Finished Goods Inventory:</span>
+            <span class="data-tabular" id="fg-soh-display" style="font-weight: 700; color: var(--primary);">0 PCS</span>
+          </div>
+        </div>
+
+        <!-- Planning Target Controls Card -->
+        <div class="card-level-1">
+          <div class="card-header">
+            <span class="card-title">Production Batch Target</span>
+            <span class="status-chip chip-success" id="feasibility-chip">FEASIBLE</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="input-target-pcs">Target Finished Units (Pieces)</label>
+            <input type="number" class="input-field data-tabular" id="input-target-pcs" value="400" min="1" step="1" oninput="onPiecesInput(this.value)">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="input-target-kg">Bulk SFG Batch Weight (KG)</label>
+            <input type="number" class="input-field data-tabular" id="input-target-kg" value="2.000" min="0.001" step="any" oninput="onBulkKgInput(this.value)">
+            <p style="font-size: 11px; color: var(--on-surface-variant); margin-top: 4px;">
+              Unit size: 5g/pc &bull; Pieces and KG sync automatically
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="input-buffer">Scrap / Yield Buffer (%)</label>
+            <input type="number" class="input-field data-tabular" id="input-buffer" value="0.0" min="0" max="25" step="0.5" oninput="onBufferInput(this.value)">
+          </div>
+
+          <button class="btn btn-primary" style="width: 100%; margin-top: 4px;" onclick="openIssueBatchModal()">
+            ⚡ Issue Production Batch
+          </button>
+        </div>
+
+        <!-- Quick Feasibility Metrics -->
+        <div class="card-level-1">
+          <div class="card-header">
+            <span class="card-title">Batch Material Demand</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <span class="body-md" style="color: var(--on-surface-variant);">Total Bulk RM:</span>
+            <span class="data-tabular" id="quick-rm-total" style="font-weight: 700;">2.000 KG</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <span class="body-md" style="color: var(--on-surface-variant);">Packaging Total:</span>
+            <span class="data-tabular" id="quick-pm-total" style="font-weight: 700;">800 PCS</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="body-md" style="color: var(--on-surface-variant);">Stock Feasibility:</span>
+            <span class="status-chip chip-success" id="quick-shortage-badge">100% SUFFICIENT</span>
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- RIGHT PANE: MAIN WORKSPACE (75%) -->
+      <main class="right-pane">
+
+        <!-- VIEW 1: LIVE BOM REQUIREMENT & STOCK TABLE -->
+        <section id="view-bom" class="view-panel">
+          <div class="table-toolbar">
+            <div>
+              <h2 class="headline-md">Live BOM Material Requirement & Stock Reconciliation</h2>
+              <p class="body-md" style="color: var(--on-surface-variant); font-size: 13px;">
+                Direct formulaic calculation matching Excel logic &bull; Deductions live against warehouse inventory
+              </p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary btn-sm" onclick="exportData('inventory')">Export Table</button>
+              <button class="btn btn-primary btn-sm" onclick="openIssueBatchModal()">Issue Batch</button>
+            </div>
+          </div>
+
+          <div id="bom-status-banner" class="alert-banner success" style="display: none;">
+            <span id="bom-status-banner-text">✓ Ready</span>
+            <button class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 11px;" onclick="document.getElementById('bom-status-banner').style.display='none'">Dismiss</button>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="data-table" id="bom-table">
+              <thead>
+                <tr>
+                  <th>Material Code</th>
+                  <th>Description</th>
+                  <th class="text-right">Recipe (g)</th>
+                  <th class="text-right">Per Pc (g)</th>
+                  <th class="text-right">Required</th>
+                  <th class="text-right">Stock On Hand</th>
+                  <th class="text-right">Balance After</th>
+                  <th class="text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody id="bom-table-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+            <div class="table-summary-bar">
+              <span id="bom-summary-count">16 Material Lines in Formula</span>
+              <span id="bom-summary-weights">Total RM: 2.000 KG &bull; Packaging: 800 PCS</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW 2: STOCK CARD AUDIT LEDGER -->
+        <section id="view-ledger" class="view-panel" style="display: none;">
+          <div class="table-toolbar">
+            <div>
+              <h2 class="headline-md">Stock Card Audit Ledger</h2>
+              <p class="body-md" style="color: var(--on-surface-variant); font-size: 13px;">
+                Complete historical record of receipts, production deductions, and adjustments
+              </p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary btn-sm" onclick="exportData('ledger')">Export Ledger CSV</button>
+              <button class="btn btn-primary btn-sm" onclick="openStockModal()">Record Transaction</button>
+            </div>
+          </div>
+
+          <div class="card-level-1" style="padding: 8px 12px; margin-bottom: 12px; display: flex; gap: 12px; align-items: center;">
+            <div class="search-input-wrapper">
+              <input type="text" class="input-field" id="ledger-search" placeholder="Search by Code, Item, Batch #, or Operator..." oninput="filterLedger(this.value)">
+            </div>
+            <div style="display: flex; gap: 4px;">
+              <button class="btn btn-secondary btn-sm" onclick="filterLedgerType('ALL')">All</button>
+              <button class="btn btn-secondary btn-sm" onclick="filterLedgerType('STOCK_IN')">Stock IN (+)</button>
+              <button class="btn btn-secondary btn-sm" onclick="filterLedgerType('STOCK_OUT')">Stock OUT (-)</button>
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="data-table" id="ledger-table">
+              <thead>
+                <tr>
+                  <th>Tx ID</th>
+                  <th>Timestamp</th>
+                  <th>Code</th>
+                  <th>Material Name</th>
+                  <th>Type</th>
+                  <th class="text-right">Qty</th>
+                  <th class="text-right">Before</th>
+                  <th class="text-right">After</th>
+                  <th>Ref Doc</th>
+                  <th>Operator</th>
+                  <th>Reason / Notes</th>
+                </tr>
+              </thead>
+              <tbody id="ledger-table-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- VIEW 3: STOCK HEALTH & SCM REORDER RADAR -->
+        <section id="view-master" class="view-panel" style="display: none;">
+          <div class="table-toolbar">
+            <div>
+              <h2 class="headline-md">Material Master & Stock Cover Months (SCM) Health Radar</h2>
+              <p class="body-md" style="color: var(--on-surface-variant); font-size: 13px;">
+                Stock Cover Months = SOH / Monthly Usage &bull; Evaluates cover days against Supplier Lead Times
+              </p>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="exportData('inventory')">Export Health Report</button>
+          </div>
+
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label">Registered Materials</div>
+              <div class="kpi-value" id="kpi-total-items">18</div>
+              <div class="kpi-subtext">Active master materials</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Reorder Now (Deficit)</div>
+              <div class="kpi-value" id="kpi-reorder-count" style="color: var(--error);">0</div>
+              <div class="kpi-subtext">Cover Days &lt; Lead Time</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Low Stock (Buffer)</div>
+              <div class="kpi-value" id="kpi-low-count" style="color: var(--warning);">0</div>
+              <div class="kpi-subtext">Within 3-week lead buffer</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Total Bulk Inventory</div>
+              <div class="kpi-value" id="kpi-total-bulk">0.0 KG</div>
+              <div class="kpi-subtext">Warehouse bulk raw mass</div>
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="data-table" id="master-table">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Description</th>
+                  <th>Category</th>
+                  <th class="text-right">Stock On Hand</th>
+                  <th class="text-right">Monthly Usage</th>
+                  <th class="text-right">SCM Cover</th>
+                  <th class="text-right">Cover (Days)</th>
+                  <th class="text-right">Lead Time</th>
+                  <th class="text-center">Health Status</th>
+                </tr>
+              </thead>
+              <tbody id="master-table-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- VIEW 4: PRODUCTION BATCH RUNS -->
+        <section id="view-batches" class="view-panel" style="display: none;">
+          <div class="table-toolbar">
+            <div>
+              <h2 class="headline-md">Production Batch Execution History</h2>
+              <p class="body-md" style="color: var(--on-surface-variant); font-size: 13px;">
+                Audit log of all issued manufacturing batches with automated Stock Card deductions
+              </p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openIssueBatchModal()">+ Issue New Batch</button>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="data-table" id="batches-table">
+              <thead>
+                <tr>
+                  <th>Batch Number</th>
+                  <th>Product Code</th>
+                  <th>Product Name</th>
+                  <th>Date & Time</th>
+                  <th>Operator</th>
+                  <th class="text-right">Target Pieces</th>
+                  <th class="text-right">Bulk Mass</th>
+                  <th class="text-center">Status</th>
+                  <th class="text-right">Lines Issued</th>
+                </tr>
+              </thead>
+              <tbody id="batches-table-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </main>
+
+    </div>
+
+  </div>
+
+  <!-- ==========================================
+       MODAL 1: ISSUE PRODUCTION BATCH
+       ========================================== -->
+  <div class="modal-backdrop" id="modal-issue-batch" onclick="if(event.target === this) closeIssueBatchModal()">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Confirm Production Batch Issue</h3>
+        <button class="modal-close-btn" onclick="closeIssueBatchModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="card-level-1" style="background-color: var(--surface-container-low); margin-bottom: 16px;">
+          <div style="font-weight: 600;" id="modal-batch-prod-name">FG-LB015/109 - Lip Balm Paper (Black Cherry) 5g</div>
+          <div class="data-tabular" id="modal-batch-target-summary" style="margin-top: 4px; color: var(--on-surface-variant);">
+            Target: 400 PCS (2.000 KG Bulk Mass)
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="modal-batch-ref">Batch Number / Work Order #</label>
+          <input type="text" class="input-field data-tabular" id="modal-batch-ref" placeholder="e.g. BATCH-BC-2026-08-01">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="modal-batch-operator">Operator Name</label>
+          <input type="text" class="input-field" id="modal-batch-operator" value="Operator Adam">
+        </div>
+
+        <div id="modal-batch-shortage-alert" style="display: none;" class="card-level-1 chip-error">
+          <strong>[!] WARNING:</strong> This batch contains material shortages. Executing will drive inventory into negative stock balance.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeIssueBatchModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitBatchIssue()">Confirm & Deduct Stock</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL 2: STOCK CARD TRANSACTION ENTRY
+       ========================================== -->
+  <div class="modal-backdrop" id="modal-stock-entry" onclick="if(event.target === this) closeStockModal()">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Record Stock Card Transaction</h3>
+        <button class="modal-close-btn" onclick="closeStockModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="modal-stock-mat">Select Material</label>
+          <select class="select-field" id="modal-stock-mat" onchange="onStockModalMatChange(this.value)">
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 12px;" class="card-level-1">
+          <span>Current SOH: <strong id="modal-stock-soh" class="data-tabular">125.280 KG</strong></span>
+          <span>Lead Time: <strong id="modal-stock-lead" class="data-tabular">134 days</strong></span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label">Transaction Direction</label>
+            <select class="select-field" id="modal-stock-type">
+              <option value="STOCK_IN">STOCK IN (+) Delivery / Receipt</option>
+              <option value="STOCK_OUT">STOCK OUT (-) Issue / Scrap</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="modal-stock-qty">Quantity (<span id="modal-stock-uom">KG</span>)</label>
+            <input type="number" class="input-field data-tabular" id="modal-stock-qty" placeholder="0.00" min="0.0001" step="any">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="modal-stock-cat">Transaction Reason Category</label>
+          <select class="select-field" id="modal-stock-cat">
+            <option value="Purchase Receipt">Purchase Receipt (PO Delivery from Vendor)</option>
+            <option value="Production Batch Issue">Production Batch Issue</option>
+            <option value="QC / Lab Sample Testing">QC / Lab Sample Testing</option>
+            <option value="Damaged / Scrap Wastage">Damaged / Scrap Wastage Write-Off</option>
+            <option value="Cycle Count Adjustment">Physical Count / Inventory Adjustment</option>
+            <option value="Return to Vendor">Return to Vendor (RTV)</option>
+          </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label" for="modal-stock-ref">Reference Document #</label>
+            <input type="text" class="input-field data-tabular" id="modal-stock-ref" placeholder="e.g. PO#9821, GRN-104">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="modal-stock-operator">Operator Name</label>
+            <input type="text" class="input-field" id="modal-stock-operator" value="Operator Adam">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="modal-stock-notes">Notes / Remarks</label>
+          <input type="text" class="input-field" id="modal-stock-notes" placeholder="Optional audit explanation">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeStockModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitStockTransaction()">Post to Stock Card</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
