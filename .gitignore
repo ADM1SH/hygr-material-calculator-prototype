@@ -15,3 +15,5 @@ package-lock.json
 
 # Logs
 *.log
+__pycache__/
+main
