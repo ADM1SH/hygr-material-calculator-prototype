@@ -51,6 +51,7 @@ def load_data_from_excel():
             "category": "Lip Care",
             "unit_weight_grams": 5.0,
             "sfg_batch_weight_grams": 1500.0,
+            "stock_on_hand": 0.0,
             "description": "Deep moisturizing lip balm with natural waxes and Black Cherry tint."
         }
     }
