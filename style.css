@@ -7,40 +7,40 @@
 
 :root {
   /* Surface & Canvas Tokens */
-  --surface: #F2F3F4;
-  --surface-dim: #d9dae1;
-  --surface-bright: #F2F3F4;
+  --surface: #F6F4EE;
+  --surface-dim: #E3DFD5;
+  --surface-bright: #FBF9F5;
   --surface-container-lowest: #ffffff;
-  --surface-container-low: #f2f3fa;
-  --surface-container: #ededf5;
-  --surface-container-high: #e7e8ef;
-  --surface-container-highest: #e1e2e9;
-  --background: #F2F3F4;
+  --surface-container-low: #F2EFE7;
+  --surface-container: #EFECE2;
+  --surface-container-high: #E8E4D9;
+  --surface-container-highest: #E1DDD0;
+  --background: #F6F4EE;
 
   /* Text / On-Surface Tokens */
-  --on-surface: #191c21;
-  --on-surface-variant: #424751;
-  --on-background: #191c21;
-  --inverse-surface: #2e3036;
-  --inverse-on-surface: #f0f0f8;
+  --on-surface: #141D17;
+  --on-surface-variant: #4A574E;
+  --on-background: #141D17;
+  --inverse-surface: #1E2721;
+  --inverse-on-surface: #F0EFEA;
 
   /* Border & Outline Tokens */
-  --outline: #727783;
-  --outline-variant: #c2c6d3;
-  --surface-tint: #175ead;
+  --outline: #738177;
+  --outline-variant: #D5D1C4;
+  --surface-tint: #133829;
 
-  /* Primary Brand (Bauhaus Blue) */
-  --primary: #003e7a;
+  /* Primary Brand (HYGR Forest Green) */
+  --primary: #133829;
   --on-primary: #ffffff;
-  --primary-container: #0055a4;
-  --on-primary-container: #afccff;
-  --inverse-primary: #a8c8ff;
+  --primary-container: #1E4E39;
+  --on-primary-container: #CBE8D8;
+  --inverse-primary: #8ED8B4;
 
-  /* Secondary */
-  --secondary: #515f74;
+  /* Secondary (Soft Sage) */
+  --secondary: #3D684F;
   --on-secondary: #ffffff;
-  --secondary-container: #d5e3fd;
-  --on-secondary-container: #57657b;
+  --secondary-container: #D7E7DC;
+  --on-secondary-container: #193826;
 
   /* Semantic Palettes */
   --error: #ba1a1a;
@@ -48,10 +48,10 @@
   --error-container: #ffdad6;
   --on-error-container: #93000a;
 
-  --success: #146c2e;
+  --success: #16A34A;
   --on-success: #ffffff;
-  --success-container: #d1e7dd;
-  --on-success-container: #0f5132;
+  --success-container: #dcfce7;
+  --on-success-container: #14532d;
 
   --warning: #856404;
   --on-warning: #ffffff;
