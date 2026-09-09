@@ -1,8 +1,8 @@
-# Calculation Reference — HYGR Material Requirement Calculator
+# Calculation Reference : HYGR Material Requirement Calculator
 
 Every formula in the system, where it came from, and how to check it yourself.
 
-**Source of truth:** `Bom Example.xlsx` — sheets `bom` and `Raw Material List`.
+**Source of truth:** `Bom Example.xlsx` : sheets `bom` and `Raw Material List`.
 **Scope:** one finished good, `FG-LB015/109` "Black Cherry" (5 g lip balm), 16 component lines.
 
 Every number in this document was generated directly from the workbook, not typed by hand.
@@ -15,15 +15,15 @@ Every number in this document was generated directly from the workbook, not type
 |---|---|---|---|
 | Unit size | `bom!H` | **5 g** | Fill weight of one finished piece (lead pump size) |
 | SFG batch output | `bom!G` | **1,500 g** | Weight of one semi-finished bulk batch the recipe describes |
-| Plan by kg | `bom!N4` | **6,000 g** | Input cell — target bulk mass |
-| Plan by pcs | `bom!N7` | **400** | Input cell — target finished pieces |
+| Plan by kg | `bom!N4` | **6,000 g** | Input cell : target bulk mass |
+| Plan by pcs | `bom!N7` | **400** | Input cell : target finished pieces |
 
-`N4` and `N7` are the only two cells you type into. They are independent of each other —
+`N4` and `N7` are the only two cells you type into. They are independent of each other :
 `N4 = 6,000 g` implies 1,200 pcs while `N7 = 400` implies 2,000 g. You read whichever column matches your target.
 
 ---
 
-## 2. Source data — the recipe (`bom` sheet, cols A–G)
+## 2. Source data : the recipe (`bom` sheet, cols A–G)
 
 Columns A–G come from R&D and must not be reordered. Everything after G was added for planning.
 
@@ -47,28 +47,28 @@ Columns A–G come from R&D and must not be reordered. Everything after G was ad
 | 16 | `PM-BO101/247` | Unitbox - Lip Balm Paper (Black Cherry) 5g | 1 | PCS | 1 |
 
 **Formulation check:** the 14 raw-material QTY values sum to **1,500 g**, exactly matching the SFG batch output of 1,500 g.
-This is a true 100% formulation — not a rounded approximation.
+This is a true 100% formulation : not a rounded approximation.
 
 ---
 
-## 3. Source data — material master (`Raw Material List` sheet)
+## 3. Source data : material master (`Raw Material List` sheet)
 
 | RM Code | Status | Lead time (d) | Stock on hand | Subgroup |
 |---|:--:|---:|---:|---|
-| `RM-SS001/005` | ACTIVE | 134 | 125.280 kg | — |
-| `RM-CO007/054` | ACTIVE | 104 | 4.350 kg | — |
-| `RM-L004/011` | ACTIVE | 30 | 23.000 kg | — |
-| `RM-CO004/043` | ACTIVE | 194 | 7.500 kg | — |
-| `RM-CO002/027` | ACTIVE | 104 | 75.000 kg | — |
-| `RM-SS004/020` | ACTIVE | 74 | 33.680 kg | — |
-| `RM-L005/028` | ACTIVE | 30 | 10.237 kg | — |
-| `RM-SS003/012` | ACTIVE | 30 | 103.460 kg | — |
-| `RM-L001/001` | ACTIVE | 30 | 424.225 kg | — |
-| `RM-CO003/031` | ACTIVE | 0 | 34.110 kg | — |
-| `RM-EO006/023` | ACTIVE | 56 | 6.660 kg | — |
-| `RM-L022/069` | ACTIVE | 30 | 35.550 kg | — |
-| `RM-L003/010` | ACTIVE | 74 | 135.000 kg | — |
-| `RM-SS007/075` | ACTIVE | 120 | 377.980 kg | — |
+| `RM-SS001/005` | ACTIVE | 134 | 125.280 kg | : |
+| `RM-CO007/054` | ACTIVE | 104 | 4.350 kg | : |
+| `RM-L004/011` | ACTIVE | 30 | 23.000 kg | : |
+| `RM-CO004/043` | ACTIVE | 194 | 7.500 kg | : |
+| `RM-CO002/027` | ACTIVE | 104 | 75.000 kg | : |
+| `RM-SS004/020` | ACTIVE | 74 | 33.680 kg | : |
+| `RM-L005/028` | ACTIVE | 30 | 10.237 kg | : |
+| `RM-SS003/012` | ACTIVE | 30 | 103.460 kg | : |
+| `RM-L001/001` | ACTIVE | 30 | 424.225 kg | : |
+| `RM-CO003/031` | ACTIVE | 0 | 34.110 kg | : |
+| `RM-EO006/023` | ACTIVE | 56 | 6.660 kg | : |
+| `RM-L022/069` | ACTIVE | 30 | 35.550 kg | : |
+| `RM-L003/010` | ACTIVE | 74 | 135.000 kg | : |
+| `RM-SS007/075` | ACTIVE | 120 | 377.980 kg | : |
 | `PM-T031/277` | ACTIVE | 65 | 21,721.000 pcs | Primary Packaging |
 | `PM-BO101/247` | ACTIVE | 30 | 9,826.000 pcs | Unitbox |
 
@@ -80,7 +80,7 @@ This is a true 100% formulation — not a rounded approximation.
 
 ## 4. The five core formulas
 
-### F1 — Material makeup per piece  (`bom!I`)
+### F1 : Material makeup per piece  (`bom!I`)
 
 How many grams of this material end up in one finished item.
 
@@ -89,35 +89,35 @@ usage_per_piece = (QTY / SFG_output) * unit_size
                 = (D    / G         ) * H
 ```
 
-**Worked example — KAHLWAX 2039L CANDELILA WAX:**
+**Worked example : KAHLWAX 2039L CANDELILA WAX:**
 
 ```
 (81 g / 1500 g) * 5 g = 0.2700 g per piece
 ```
 
-**Check:** across all 14 raw materials this column sums to **5.000 g** — exactly the 5 g unit size. Every gram is accounted for.
+**Check:** across all 14 raw materials this column sums to **5.000 g** : exactly the 5 g unit size. Every gram is accounted for.
 
-### F2 — Plan by pieces  (`bom!J`)
+### F2 : Plan by pieces  (`bom!J`)
 
 ```
 required = usage_per_piece * target_pieces
          = I               * $N$7
 ```
 
-**Worked example — DK-PGT PASTE IOB (BLACK) (5KG/PAIL) at 400 pcs:**
+**Worked example : DK-PGT PASTE IOB (BLACK) (5KG/PAIL) at 400 pcs:**
 
 ```
 0.0533 g * 400 pcs = 21.33 g
 ```
 
-### F3 — Plan by kilo  (`bom!K`)
+### F3 : Plan by kilo  (`bom!K`)
 
 ```
 required = (QTY / SFG_output) * target_bulk_grams
          = (D   / G         ) * $N$4
 ```
 
-**Worked example — KAHLWAX 2039L CANDELILA WAX at 6,000 g bulk:**
+**Worked example : KAHLWAX 2039L CANDELILA WAX at 6,000 g bulk:**
 
 ```
 (81 / 1500) * 6,000 g = 324.00 g
@@ -129,7 +129,7 @@ Normalising to exactly 1 kg (the header's "per 1000g") is the same ratio with 10
 (81 / 1500) * 1000 g = 54.00 g per kilo of bulk
 ```
 
-### F4 — Production plan use  (`Raw Material List!F`)
+### F4 : Production plan use  (`Raw Material List!F`)
 
 Pulls demand back from the BOM and converts grams to kilos.
 
@@ -140,7 +140,7 @@ PM rows:  = XLOOKUP(code, bom!C:C, bom!J:J, 0, 0, 1)
 
 The `/1000` converts g → kg. **PM rows do not divide**, because column J is already a piece count.
 
-### F5 — Expected balance after production  (`Raw Material List!G`)
+### F5 : Expected balance after production  (`Raw Material List!G`)
 
 ```
 balance_after = stock_on_hand - production_plan_use
@@ -182,7 +182,7 @@ Each total closing back on its input is the proof the formulation is internally 
 
 ---
 
-## 6. Raw Material vs Packaging Material — the branching rule
+## 6. Raw Material vs Packaging Material : the branching rule
 
 This is the one place the Excel needs a human and the code does not.
 
@@ -192,17 +192,17 @@ This is the one place the Excel needs a human and the code does not.
 | Per piece | `(QTY / SFG) * unit_size` | always **1** |
 | Plan by pcs | `usage * pieces / 1000` → kg | `ceil(usage * pieces)` → pcs |
 | Plan by kg | `(QTY / SFG) * bulk_g` → g | `bulk_g / unit_size` → pcs |
-| Rounding | none (fractional kg is fine) | **`ceil`** — you cannot issue half a tube |
+| Rounding | none (fractional kg is fine) | **`ceil`** : you cannot issue half a tube |
 
 **In the workbook this rule is hand-patched.** Cells `I16` and `I17` are hardcoded `1` rather than
-formulas, because `(D/G)*H` would give `(1/1)*5 = 5` — wrong for a tube. Column `K` likewise switches
+formulas, because `(D/G)*H` would give `(1/1)*5 = 5` : wrong for a tube. Column `K` likewise switches
 to `$N$4/H` on those two rows. In the project this is a real branch on the material's category, so it
 cannot be forgotten when a row is added.
 
 **PM subcategories** (from the meeting):
 
-- **Primary** — touches the product (the tube). Production cannot proceed without it.
-- **Secondary** — outer packaging (unitbox, label). Production can sometimes proceed without it.
+- **Primary** : touches the product (the tube). Production cannot proceed without it.
+- **Secondary** : outer packaging (unitbox, label). Production can sometimes proceed without it.
 
 ---
 
@@ -217,14 +217,14 @@ bulk_kg ->  pieces  :   pieces  = bulk_kg * 1000 / unit_size
 
 So the workbook's two inputs are equivalent to: `400 pcs = 2.000 kg` and `6 kg = 1,200 pcs`.
 
-Both modes then run the *same* per-piece maths — plan-by-kg simply converts to pieces first. That is
+Both modes then run the *same* per-piece maths : plan-by-kg simply converts to pieces first. That is
 why column K can be reproduced exactly by planning for 1,200 pieces.
 
 ---
 
 ## 8. Yield / scrap buffer
 
-Not in the Excel — added by the system for real production, where you overdraw slightly to cover loss.
+Not in the Excel : added by the system for real production, where you overdraw slightly to cover loss.
 
 ```
 multiplier = 1 + (buffer_percent / 100)
@@ -232,7 +232,7 @@ required   = base_requirement * multiplier
 ```
 
 Default is **0%**, which is why the app reproduces the Excel exactly out of the box. Set it to 5% and
-every requirement rises by 5% — the Excel has no equivalent.
+every requirement rises by 5% : the Excel has no equivalent.
 
 ---
 
@@ -255,9 +255,9 @@ At 400 pcs this lands every material on exactly the value in `Raw Material List!
 
 ---
 
-## 10. Stock health — Stock Cover Months
+## 10. Stock health : Stock Cover Months
 
-From the meeting. **Not derivable from the Excel** — see §11.
+From the meeting. **Not derivable from the Excel** : see §11.
 
 ```
 SCM        = stock_on_hand / avg_monthly_usage
@@ -276,7 +276,7 @@ Health is judged against the supplier lead time, in this order:
 Order matters: the reorder test runs first, so a material can be flagged `REORDER NOW` even while
 holding a large absolute quantity, if its lead time is long enough.
 
-**Worked example — KAHLWAX 2039L CANDELILA WAX:** 125.280 kg on hand, 30.0 kg/month usage
+**Worked example : KAHLWAX 2039L CANDELILA WAX:** 125.280 kg on hand, 30.0 kg/month usage
 → SCM = 4.2 months → 125 cover days, against a 134-day lead time → **REORDER NOW**.
 
 ---
@@ -286,7 +286,7 @@ holding a large absolute quantity, if its lead time is long enough.
 Two things the system needs that the workbook does not supply. Both are data problems, not logic problems.
 
 1. **`RM-CO003/031` (DK-PGT Paste Y6L (Orange) (5KG/PAIL)) has lead time `0`.** Cell `D11` in the workbook is genuinely
-   blank/zero — missing data, not a real zero. With a lead time of 0 the reorder test
+   blank/zero : missing data, not a real zero. With a lead time of 0 the reorder test
    `cover_days <= 0` can never fire, so this material can never be flagged. **Key a real value in**
    **before relying on the reorder radar.**
 
@@ -298,7 +298,7 @@ Also worth knowing, though not currently wrong:
 
 3. **`XLOOKUP` returns the first match only.** The workbook handles exactly one finished good. The
    moment a second product uses a shared material, the second demand is silently dropped. Multi-product
-   planning needs summing across all BOMs plus an allocation order — the "500 g on hand, product A takes
+   planning needs summing across all BOMs plus an allocation order : the "500 g on hand, product A takes
    400 g so product B's 300 g cannot be fulfilled" case from the meeting is **not computable in the**
    **workbook as it stands**.
 
@@ -345,4 +345,75 @@ To confirm the app matches the workbook, open the Excel side by side and compare
   and `bom!K` as-is for PM rows.
 - Press **Issue Production Batch** → every *Stock On Hand* must land on `Raw Material List!G`.
 - Press **Reset Seed Data** → every *Stock On Hand* must return to `Raw Material List!E`.
+
+
+---
+
+## 14. Multi-SKU Weekly Production Planning & Chronological Simulation
+
+### F6: Pot Unit Conversion
+Observed in sheet `Planning` of `13.1.2025 HYGR Production Schedule.xlsx`.
+- 1 pot = 1.5 kg (1,500 g) of bulk semi-finished goods (SFG).
+- For a finished good with unit weight $W$ grams per piece:
+  $$\text{Target Bulk Mass (kg)} = \text{Pots} \times 1.5$$
+  $$\text{Target Finished Pieces} = \frac{\text{Pots} \times 1500}{W}$$
+
+### F7: Multi-SKU Demand Aggregation
+Across all planned batches $B = \{b_1, b_2, \dots, b_n\}$ scheduled for active production:
+$$\text{Total Required (RM Code } c) = \sum_{b \in B} \left( \frac{\text{Recipe Ratio } (c, b.\text{fg})}{1000} \times b.\text{bulk\_kg} \times (1 + b.\text{buffer}) \right)$$
+For packaging materials ($c \in \text{PM}$):
+$$\text{Total Required (PM Code } c) = \sum_{b \in B} \lceil \text{Usage Per Piece } (c, b.\text{fg}) \times b.\text{pieces} \times (1 + b.\text{buffer}) \rceil$$
+
+### F8: Chronological Day-by-Day Balance Simulation
+Days are ordered $D = [\text{Monday}, \text{Tuesday}, \text{Wednesday}, \text{Thursday}, \text{Friday}, \text{Saturday}]$.
+For every material $c$:
+- $\text{Balance}_0(c) = \text{Stock On Hand}(c)$
+- For each day $d \in D$:
+  $$\text{Balance}_d(c) = \text{Balance}_{d-1}(c) - \text{Daily Demand}_d(c)$$
+  If $\text{Balance}_d(c) < 0$ and $\text{First Deficit Day}(c)$ is not yet set:
+  $$\text{First Deficit Day}(c) = d$$
+
+### F9: BOM Mass Deduction Variance
+When issuing a batch with actual scale weight measurements:
+$$\text{Variance} = \text{Actual Scaled Qty} - \text{Theoretical Qty}$$
+Actual scale quantity is deducted from warehouse inventory and recorded to the Stock Card Audit Ledger.
+
+---
+
+## 15. Supplier Pack-Size Rounding & Purchase Reorder Mathematics
+
+When weekly production planning results in a projected inventory deficit, purchase orders must align with supplier packaging constraints rather than fractional shortages.
+
+### F10: Deficit Calculation
+For material $c$ with live stock on hand $\text{SOH}(c)$ and weekly committed demand $\text{Demand}(c)$:
+$$\text{Projected Balance}(c) = \text{SOH}(c) - \text{Demand}(c)$$
+A shortage occurs when:
+$$\text{Deficit}(c) = |\text{Projected Balance}(c)| \quad \text{for } \text{Projected Balance}(c) < 0$$
+
+### F11: Integer Pack Quantity Sizing
+Suppliers deliver materials in standardized commercial packaging units $P(c)$ (e.g. 190.0 kg drum, 25.0 kg bag, 20.0 kg carton, 1,000 pcs packaging carton).
+$$\text{Packs to Order}(c) = \left\lceil \frac{\text{Deficit}(c)}{P(c)} \right\rceil$$
+$$\text{Suggested Order Quantity}(c) = \text{Packs to Order}(c) \times P(c)$$
+$$\text{Post-Production Surplus}(c) = \text{Suggested Order Quantity}(c) - \text{Deficit}(c)$$
+
+### F12: Procurement Lead Time Urgency
+For material $c$ with supplier lead time $L(c)$ days:
+$$\text{Urgency Status} = \begin{cases} \text{CRITICAL LEAD TIME}, & L(c) \ge 30 \\ \text{STANDARD}, & L(c) < 30 \end{cases}$$
+
+---
+
+## 16. Batch Manufacturing Record (BMR) Floor Scaling & Phase Assignment
+
+### F13: Gram-Level Floor Recipe Scaling
+For a compounding batch with target bulk mass $M_{\text{bulk}}$ (in kilograms), yield buffer percent $\beta \ge 0$, and recipe formulation ratio $R_i$ (grams per 1,000 g bulk):
+$$\text{Target Scaled Grams}_i = \left( \frac{R_i}{1000} \right) \times M_{\text{bulk}} \times \left(1 + \frac{\beta}{100}\right) \times 1000 = R_i \times M_{\text{bulk}} \times \left(1 + \frac{\beta}{100}\right)$$
+For primary packaging component $j$ with target finished units $U_{\text{target}}$:
+$$\text{Target Component Count}_j = \left\lceil U_{\text{target}} \times \text{Usage Per Unit}_j \times \left(1 + \frac{\beta}{100}\right) \right\rceil$$
+
+### Phase Classification Protocol
+To prevent premature thermal degradation of fragrances and ensure colloidal stability:
+- **Phase A (Waxes, Butters, Base Oils):** Melting temperature 75°C to 80°C. High thermal stability lipids (MCT Oil, Beeswax, Candelila Wax, Shea Butter, Jojoba Oil, Argan Oil, Avocado Oil).
+- **Phase B (Powders, Actives & Pigment Pastes):** High-shear dispersion phase. Magnesium Hydroxide, Farmal corn starches, Colloidal Oatmeal, Tegodeo, Celluloscrub, and DK-PGT pigment pastes.
+- **Phase C (Fragrances, Essential Oils & Heat-Sensitive Actives):** Cool-down addition at 55°C to 60°C. Bergamot, Lavender, Rose Geranium, Tea Tree, Citrus Verbena, Fragrance oils, Vitamin E Acetate, Hyaluronic Acid.
+- **Phase D (Primary & Secondary Packaging):** Hot filling at 50°C to 55°C into pre-labeled tubes, jars, refill mechanisms, and dropper bottles.
 

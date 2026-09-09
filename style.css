@@ -3,7 +3,34 @@
    Design System: Industrial Minimalism (DESIGN.md)
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('fonts/JetBrainsMono-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('fonts/JetBrainsMono-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('fonts/JetBrainsMono-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('fonts/JetBrainsMono-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   /* Surface & Canvas Tokens */
@@ -82,7 +109,7 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'JetBrains Mono', monospace;
   background-color: var(--background);
   color: var(--on-surface);
   line-height: 1.5;
@@ -93,7 +120,7 @@ body {
 
 /* Typography Classes per DESIGN.md */
 .display-lg {
-  font-family: 'Inter', sans-serif;
+  font-family: 'JetBrains Mono', monospace;
   font-size: 28px;
   font-weight: 700;
   line-height: 1.2;
@@ -101,7 +128,7 @@ body {
 }
 
 .headline-md {
-  font-family: 'Inter', sans-serif;
+  font-family: 'JetBrains Mono', monospace;
   font-size: 20px;
   font-weight: 600;
   line-height: 1.3;
@@ -109,14 +136,14 @@ body {
 }
 
 .title-sm {
-  font-family: 'Inter', sans-serif;
+  font-family: 'JetBrains Mono', monospace;
   font-size: 15px;
   font-weight: 600;
   line-height: 1.4;
 }
 
 .body-md {
-  font-family: 'Inter', sans-serif;
+  font-family: 'JetBrains Mono', monospace;
   font-size: 14px;
   font-weight: 400;
 }
@@ -180,7 +207,7 @@ body {
 }
 
 .brand-title {
-  font-family: 'Inter', sans-serif;
+  font-family: 'JetBrains Mono', monospace;
   font-size: 18px;
   font-weight: 700;
   color: var(--on-surface);
@@ -234,7 +261,7 @@ body {
 }
 
 .card-title {
-  font-family: 'Inter', sans-serif;
+  font-family: 'JetBrains Mono', monospace;
   font-size: 14px;
   font-weight: 600;
   color: var(--on-surface);
@@ -264,7 +291,7 @@ body {
   border: 1px solid var(--outline-variant);
   border-radius: var(--radius-default);
   color: var(--on-surface-variant);
-  font-family: 'Inter', sans-serif;
+  font-family: 'JetBrains Mono', monospace;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -324,7 +351,7 @@ body {
 
 .input-field::placeholder {
   color: var(--outline);
-  font-family: 'Inter', sans-serif;
+  font-family: 'JetBrains Mono', monospace;
 }
 
 /* Button Component Styles */
@@ -334,7 +361,7 @@ body {
   justify-content: center;
   gap: 6px;
   padding: 8px 16px;
-  font-family: 'Inter', sans-serif;
+  font-family: 'JetBrains Mono', monospace;
   font-size: 13px;
   font-weight: 600;
   border-radius: var(--radius-default);
@@ -494,7 +521,7 @@ body {
   padding: var(--spacing-sm) var(--spacing-md);
   background-color: var(--surface-container-high);
   border-top: 1px solid var(--outline-variant);
-  font-family: 'Inter', sans-serif;
+  font-family: 'JetBrains Mono', monospace;
   font-size: 13px;
   font-weight: 600;
 }
@@ -586,7 +613,7 @@ body {
 }
 
 .modal-title {
-  font-family: 'Inter', sans-serif;
+  font-family: 'JetBrains Mono', monospace;
   font-size: 16px;
   font-weight: 600;
   color: var(--on-surface);
@@ -638,7 +665,7 @@ body {
   color: var(--inverse-on-surface);
   padding: 10px 16px;
   border-radius: var(--radius-default);
-  font-family: 'Inter', sans-serif;
+  font-family: 'JetBrains Mono', monospace;
   font-size: 13px;
   font-weight: 500;
   display: flex;
@@ -703,4 +730,611 @@ body {
 .alert-banner.success {
   border-left-color: var(--success);
   background-color: #f0fdf4;
+}
+
+/* ==========================================================================
+   MULTI-SKU WEEKLY PLANNER & TIMELINE STYLES (DESIGN.md)
+   ========================================================================== */
+
+/* Role Switcher in Header */
+.role-badge-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--surface-container-high);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-default);
+  padding: 3px 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+
+.role-toggle-btn {
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--on-surface-variant);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.role-toggle-btn.active {
+  background-color: var(--primary);
+  color: var(--on-primary);
+}
+
+/* Day-by-Day Runout Timeline */
+.timeline-strip {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.day-card {
+  background-color: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-default);
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+  position: relative;
+}
+
+.day-card:hover {
+  border-color: var(--primary);
+}
+
+.day-card.selected {
+  border-color: var(--primary);
+  background-color: var(--surface-container-low);
+  outline: 2px solid var(--primary);
+}
+
+.day-card.has-shortage {
+  border-left: 4px solid var(--error);
+}
+
+.day-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.day-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--on-surface);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.day-kpi-sub {
+  font-size: 11px;
+  color: var(--on-surface-variant);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Drill-down Drawer */
+.drilldown-row {
+  background-color: var(--surface-container-low);
+}
+
+.drilldown-container {
+  padding: 12px 16px;
+  border-left: 3px solid var(--primary);
+  background-color: var(--surface-bright);
+}
+
+.drilldown-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.drilldown-table th {
+  background-color: var(--surface-container);
+  color: var(--on-surface-variant);
+  padding: 6px 10px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.drilldown-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+/* Wider Modal for Staging */
+.modal-dialog.wide {
+  max-width: 960px;
+  width: 95%;
+}
+
+/* Staging Table & Inputs */
+.staging-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+
+.staging-table th {
+  background-color: var(--surface-container-high);
+  color: var(--on-surface);
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.staging-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--outline-variant);
+  vertical-align: middle;
+}
+
+.input-table-cell {
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-container-lowest);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--on-surface);
+}
+
+.input-table-cell:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.variance-chip {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.variance-chip.zero {
+  background-color: var(--surface-container);
+  color: var(--on-surface-variant);
+}
+
+.variance-chip.positive {
+  background-color: var(--warning-container);
+  color: var(--on-warning-container);
+}
+
+.variance-chip.negative {
+  background-color: var(--info-container);
+  color: var(--on-info-container);
+}
+
+.btn-icon {
+  background: transparent;
+  border: none;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  padding: 4px;
+  font-size: 14px;
+  line-height: 1;
+  border-radius: var(--radius-sm);
+}
+
+.btn-icon:hover {
+  background-color: var(--surface-container-high);
+  color: var(--on-surface);
+}
+
+.btn-icon.danger:hover {
+  background-color: var(--error-container);
+  color: var(--error);
+}
+
+/* Inline Grid Controls */
+.grid-select-sm {
+  padding: 3px 6px;
+  font-size: 12px;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-container-lowest);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.grid-input-sm {
+  width: 80px;
+  padding: 3px 6px;
+  font-size: 12px;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-container-lowest);
+  font-family: 'JetBrains Mono', monospace;
+  text-align: right;
+}
+
+/* ==========================================================================
+   BMR FLOOR SCALING SHEET & PRINT WORK ORDER (OPTION 2)
+   ========================================================================== */
+
+.bmr-sheet-container {
+    background-color: var(--surface-container-lowest);
+    color: var(--on-surface);
+    font-family: 'JetBrains Mono', monospace;
+    padding: 24px;
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-default);
+}
+
+.bmr-company-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--on-surface);
+    margin-bottom: 16px;
+}
+
+.bmr-company-title {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--primary);
+}
+
+.bmr-doc-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    background-color: var(--surface-container);
+    color: var(--on-surface);
+    padding: 4px 8px;
+    border: 1px solid var(--outline);
+    border-radius: var(--radius-sm);
+    text-align: right;
+}
+
+.bmr-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    padding: 12px;
+    background-color: var(--surface-container-low);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-sm);
+    margin-bottom: 20px;
+}
+
+.bmr-meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.bmr-meta-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--on-surface-variant);
+}
+
+.bmr-meta-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--on-surface);
+}
+
+.bmr-phase-banner {
+    background-color: var(--surface-container-high);
+    border-left: 4px solid var(--primary);
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-top: 16px;
+    margin-bottom: 8px;
+    color: var(--on-surface);
+}
+
+.bmr-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-bottom: 12px;
+}
+
+.bmr-table th {
+    background-color: var(--surface-container);
+    color: var(--on-surface);
+    font-weight: 700;
+    padding: 6px 8px;
+    border: 1px solid var(--outline);
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.bmr-table td {
+    padding: 6px 8px;
+    border: 1px solid var(--outline-variant);
+    vertical-align: middle;
+    color: var(--on-surface);
+}
+
+.bmr-box-entry {
+    display: inline-block;
+    min-width: 70px;
+    height: 24px;
+    border: 1px dashed var(--outline);
+    background-color: var(--surface-bright);
+    border-radius: var(--radius-sm);
+}
+
+.bmr-check-box {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid var(--outline);
+    border-radius: var(--radius-sm);
+    text-align: center;
+    line-height: 16px;
+}
+
+.bmr-instructions-box {
+    margin-top: 20px;
+    padding: 12px 16px;
+    background-color: var(--surface-container-low);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-sm);
+}
+
+.bmr-instructions-box h4 {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+    color: var(--primary);
+}
+
+.bmr-instructions-list {
+    margin-left: 18px;
+    font-size: 12px;
+    color: var(--on-surface);
+    line-height: 1.6;
+}
+
+.bmr-signoff-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 2px solid var(--outline);
+}
+
+.bmr-signoff-card {
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-sm);
+    padding: 10px;
+    background-color: var(--surface-container-lowest);
+}
+
+.bmr-signoff-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--on-surface-variant);
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--outline-variant);
+}
+
+.bmr-signoff-line {
+    margin-top: 24px;
+    border-top: 1px solid var(--outline);
+    padding-top: 4px;
+    font-size: 11px;
+    color: var(--on-surface-variant);
+    display: flex;
+    justify-content: space-between;
+}
+
+/* ==========================================================================
+   REORDER DRAFTER & PACK SIZING (OPTION 3)
+   ========================================================================== */
+
+.reorder-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.reorder-kpi-card {
+    background-color: var(--surface-container-low);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+}
+
+.reorder-kpi-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--on-surface-variant);
+    margin-bottom: 4px;
+}
+
+.reorder-kpi-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--on-surface);
+}
+
+.pack-chip {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    background-color: var(--surface-container-high);
+    color: var(--on-surface);
+    border: 1px solid var(--outline-variant);
+}
+
+.order-highlight {
+    color: var(--primary);
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* ==========================================================================
+   PRINT MEDIA RULES (STRICT CLEAN A4 OUTPUT)
+   ========================================================================== */
+
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 10mm 10mm 10mm 10mm;
+    }
+
+    body {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        font-size: 10pt !important;
+    }
+
+    /* Hide entire UI except the BMR modal contents */
+    .app-header,
+    .left-pane,
+    .right-pane,
+    .nav-tabs,
+    .table-toolbar,
+    .alert-banner,
+    .toast-container,
+    .modal-backdrop:not(#modal-bmr-sheet),
+    #modal-bmr-sheet .modal-header,
+    #modal-bmr-sheet .modal-footer,
+    #modal-stage-batch,
+    #modal-stock-entry,
+    #modal-reorder-drafter,
+    .btn {
+        display: none !important;
+    }
+
+    #modal-bmr-sheet {
+        display: block !important;
+        position: static !important;
+        background: transparent !important;
+        padding: 0 !important;
+        width: 100% !important;
+        box-shadow: none !important;
+    }
+
+    #modal-bmr-sheet .modal-dialog {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+    }
+
+    #modal-bmr-sheet .modal-body {
+        padding: 0 !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    .bmr-sheet-container {
+        border: none !important;
+        padding: 0 !important;
+    }
+
+    .bmr-company-header {
+        border-bottom: 2px solid #000000 !important;
+    }
+
+    .bmr-company-title {
+        color: #000000 !important;
+    }
+
+    .bmr-meta-grid {
+        background-color: #f7f7f7 !important;
+        border: 1px solid #000000 !important;
+    }
+
+    .bmr-meta-val {
+        color: #000000 !important;
+    }
+
+    .bmr-phase-banner {
+        background-color: #ececec !important;
+        border-left: 4px solid #000000 !important;
+        color: #000000 !important;
+        page-break-after: avoid;
+    }
+
+    .bmr-table {
+        border: 1px solid #000000 !important;
+        page-break-inside: auto;
+    }
+
+    .bmr-table th {
+        background-color: #e5e5e5 !important;
+        color: #000000 !important;
+        border: 1px solid #000000 !important;
+    }
+
+    .bmr-table td {
+        border: 1px solid #666666 !important;
+        color: #000000 !important;
+    }
+
+    .bmr-box-entry {
+        border: 1px solid #000000 !important;
+        background-color: #ffffff !important;
+    }
+
+    .bmr-check-box {
+        border: 1.5px solid #000000 !important;
+    }
+
+    .bmr-instructions-box {
+        background-color: #f7f7f7 !important;
+        border: 1px solid #000000 !important;
+        page-break-inside: avoid;
+    }
+
+    .bmr-instructions-box h4 {
+        color: #000000 !important;
+    }
+
+    .bmr-signoff-grid {
+        border-top: 2px solid #000000 !important;
+        page-break-inside: avoid;
+    }
+
+    .bmr-signoff-card {
+        border: 1px solid #000000 !important;
+    }
 }
