@@ -69,6 +69,12 @@
   --secondary-container: #D7E7DC;
   --on-secondary-container: #193826;
 
+  /* Tertiary (Terracotta / Warm Ochre) */
+  --tertiary: #935B32;
+  --on-tertiary: #ffffff;
+  --tertiary-container: #F5E5D7;
+  --on-tertiary-container: #4D270E;
+
   /* Semantic Palettes */
   --error: #ba1a1a;
   --on-error: #ffffff;
@@ -96,6 +102,10 @@
   --spacing-md: 16px;
   --spacing-lg: 24px;
   --spacing-xl: 32px;
+
+  /* Interactive control height, shared by every toolbar control */
+  --control-height: 36px;
+  --control-height-inner: 34px;
 }
 
 /* ==========================================================================
@@ -106,6 +116,11 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -121,15 +136,16 @@ body {
 /* Typography Classes per DESIGN.md */
 .display-lg {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
 
 .headline-md {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 600;
   line-height: 1.3;
   letter-spacing: -0.01em;
@@ -137,7 +153,7 @@ body {
 
 .title-sm {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 600;
   line-height: 1.4;
 }
@@ -146,12 +162,14 @@ body {
   font-family: 'JetBrains Mono', monospace;
   font-size: 14px;
   font-weight: 400;
+  line-height: 1.5;
 }
 
 .data-tabular {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
+  line-height: 1.5;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0em;
 }
@@ -170,12 +188,14 @@ body {
    ========================================================================== */
 
 .app-wrapper {
+  width: 100%;
   max-width: 1440px;
   margin: 0 auto;
   padding: 0 var(--spacing-lg) var(--spacing-xl);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 /* System Header Bar */
@@ -198,10 +218,10 @@ body {
 .brand-logo-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   background-color: var(--primary);
   color: var(--on-primary);
-  padding: 6px 10px;
+  padding: 4px 8px;
   border-radius: var(--radius-default);
   font-family: 'JetBrains Mono', monospace;
   font-size: 13px;
@@ -230,15 +250,21 @@ body {
 /* Main Split View Grid (25% Left / 75% Right) */
 .split-view-container {
   display: grid;
-  grid-template-columns: 320px 1fr;
+  grid-template-columns: 320px minmax(0, 1fr);
   gap: var(--spacing-lg);
   align-items: start;
   flex: 1;
+  width: 100%;
+  min-width: 0;
+}
+
+.split-view-container > * {
+  min-width: 0;
 }
 
 @media (max-width: 1024px) {
   .split-view-container {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -276,43 +302,17 @@ body {
 .left-pane {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
-.nav-tabs-menu {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-bottom: var(--spacing-md);
+.right-pane {
+  min-width: 0;
+  max-width: 100%;
 }
 
-.nav-tab-btn {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
-  background-color: var(--surface-container-lowest);
-  border: 1px solid var(--outline-variant);
-  border-radius: var(--radius-default);
-  color: var(--on-surface-variant);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  text-align: left;
-  transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
-}
-
-.nav-tab-btn:hover {
-  background-color: var(--surface-container-high);
-  color: var(--on-surface);
-}
-
-.nav-tab-btn.active {
-  background-color: var(--surface-container-highest);
-  border-left: 3px solid var(--primary);
-  border-color: var(--outline-variant);
-  color: var(--primary);
-  font-weight: 600;
+.view-panel {
+  min-width: 0;
+  max-width: 100%;
 }
 
 /* ==========================================================================
@@ -336,7 +336,9 @@ body {
 
 .input-field, .select-field {
   width: 100%;
-  padding: 8px 12px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 8px 8px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 13px;
   color: var(--on-surface);
@@ -352,6 +354,13 @@ body {
   box-shadow: inset 0 0 0 1px var(--primary);
 }
 
+/* After :focus on purpose. Both selectors carry the same specificity, so the
+   later rule wins and an invalid field stays red while the operator is in it. */
+.input-field.is-invalid, .select-field.is-invalid {
+  border-color: var(--error);
+  box-shadow: inset 0 0 0 1px var(--error);
+}
+
 .input-field::placeholder {
   color: var(--outline);
   font-family: 'JetBrains Mono', monospace;
@@ -362,7 +371,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   padding: 8px 16px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 13px;
@@ -395,8 +404,13 @@ body {
 }
 
 .btn-sm {
-  padding: 4px 10px;
+  padding: var(--spacing-xs) var(--spacing-sm);
   font-size: 12px;
+}
+
+.btn-xs {
+  padding: var(--spacing-xs);
+  font-size: 11px;
 }
 
 .btn-danger {
@@ -417,7 +431,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 6px;
+  padding: 2px 4px;
   border-radius: var(--radius-sm);
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
@@ -471,6 +485,9 @@ body {
   border: 1px solid var(--outline-variant);
   border-radius: var(--radius-default);
   background-color: var(--surface-container-lowest);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .data-table {
@@ -487,15 +504,15 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--on-surface-variant);
-  padding: 8px 12px;
+  padding: var(--spacing-sm);
   border-bottom: 2px solid var(--on-surface);
   white-space: nowrap;
 }
 
 .data-table td {
-  padding: 8px 12px;
+  padding: var(--spacing-sm);
   border-bottom: 1px solid var(--outline-variant);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--on-surface);
   vertical-align: middle;
 }
@@ -514,6 +531,56 @@ body {
 
 .text-center {
   text-align: center;
+}
+
+/* Text-only truncation. Never applied to .data-tabular cells: a clipped
+   quantity is a data-integrity failure in a stock ledger. */
+.cell-truncate {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.text-muted {
+  color: var(--on-surface-variant);
+}
+
+.helper-text {
+  font-size: 11px;
+  color: var(--on-surface-variant);
+}
+
+.field-hint {
+  font-size: 11px;
+  color: var(--on-surface-variant);
+  margin-bottom: var(--spacing-xs);
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--spacing-sm);
+}
+
+.flex-row {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-xs);
+}
+
+.empty-cell {
+  padding: var(--spacing-lg);
+  color: var(--outline);
 }
 
 /* Table Footer / Summary Rule */
@@ -535,7 +602,7 @@ body {
 
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-md);
 }
@@ -557,13 +624,6 @@ body {
   margin-bottom: 4px;
 }
 
-.kpi-value {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--on-surface);
-}
-
 .kpi-subtext {
   font-size: 11px;
   color: var(--on-surface-variant);
@@ -575,11 +635,8 @@ body {
 
 .modal-backdrop {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(25, 28, 33, 0.4);
+  inset: 0;
+  background-color: rgba(20, 29, 23, 0.45);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
@@ -666,7 +723,7 @@ body {
 .toast {
   background-color: var(--inverse-surface);
   color: var(--inverse-on-surface);
-  padding: 10px 16px;
+  padding: 8px 16px;
   border-radius: var(--radius-default);
   font-family: 'JetBrains Mono', monospace;
   font-size: 13px;
@@ -707,23 +764,13 @@ body {
   max-width: 380px;
 }
 
-/* Row update flash & status banner */
-@keyframes rowFlash {
-  0% { background-color: #d5e3fd; }
-  100% { background-color: transparent; }
-}
-
-.row-flash td {
-  animation: rowFlash 1.5s ease-out;
-}
-
+/* Status banner */
 .alert-banner {
   background-color: var(--surface-container-low);
   border: 1px solid var(--outline-variant);
-  border-left: 4px solid var(--primary);
-  padding: 10px 14px;
+  padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-default);
-  margin-bottom: 12px;
+  margin-bottom: var(--spacing-md);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -731,8 +778,8 @@ body {
 }
 
 .alert-banner.success {
-  border-left-color: var(--success);
-  background-color: #f0fdf4;
+  border-color: var(--success);
+  background-color: var(--success-container);
 }
 
 /* ==========================================================================
@@ -743,11 +790,11 @@ body {
 .role-badge-group {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   background-color: var(--surface-container-high);
   border: 1px solid var(--outline-variant);
   border-radius: var(--radius-default);
-  padding: 3px 6px;
+  padding: 4px 4px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 12px;
 }
@@ -757,7 +804,7 @@ body {
   border: none;
   font-size: 11px;
   font-weight: 600;
-  padding: 3px 8px;
+  padding: 4px 8px;
   border-radius: var(--radius-sm);
   cursor: pointer;
   color: var(--on-surface-variant);
@@ -772,7 +819,7 @@ body {
 /* Day-by-Day Runout Timeline */
 .timeline-strip {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 16px;
 }
@@ -781,7 +828,7 @@ body {
   background-color: var(--surface-container-lowest);
   border: 1px solid var(--outline-variant);
   border-radius: var(--radius-default);
-  padding: 10px 12px;
+  padding: 8px 8px;
   cursor: pointer;
   transition: border-color 0.15s ease, background-color 0.15s ease;
   position: relative;
@@ -798,7 +845,7 @@ body {
 }
 
 .day-card.has-shortage {
-  border-left: 4px solid var(--error);
+  border-color: var(--error);
 }
 
 .day-card-header {
@@ -828,8 +875,8 @@ body {
 }
 
 .drilldown-container {
-  padding: 12px 16px;
-  border-left: 3px solid var(--primary);
+  padding: var(--spacing-md);
+  border-left: 1px solid var(--outline-variant);
   background-color: var(--surface-bright);
 }
 
@@ -837,13 +884,13 @@ body {
   width: 100%;
   border-collapse: collapse;
   font-size: 12px;
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
 .drilldown-table th {
   background-color: var(--surface-container);
   color: var(--on-surface-variant);
-  padding: 6px 10px;
+  padding: 4px 8px;
   text-align: left;
   font-size: 11px;
   font-weight: 600;
@@ -851,7 +898,7 @@ body {
 }
 
 .drilldown-table td {
-  padding: 6px 10px;
+  padding: 4px 8px;
   border-bottom: 1px solid var(--outline-variant);
 }
 
@@ -871,7 +918,7 @@ body {
 .staging-table th {
   background-color: var(--surface-container-high);
   color: var(--on-surface);
-  padding: 8px 10px;
+  padding: 8px 8px;
   font-size: 12px;
   font-weight: 600;
   text-align: left;
@@ -879,7 +926,7 @@ body {
 }
 
 .staging-table td {
-  padding: 6px 8px;
+  padding: 4px 8px;
   border-bottom: 1px solid var(--outline-variant);
   vertical-align: middle;
 }
@@ -902,7 +949,7 @@ body {
 
 .variance-chip {
   display: inline-block;
-  padding: 2px 6px;
+  padding: 2px 4px;
   border-radius: var(--radius-sm);
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
@@ -943,27 +990,6 @@ body {
 .btn-icon.danger:hover {
   background-color: var(--error-container);
   color: var(--error);
-}
-
-/* Inline Grid Controls */
-.grid-select-sm {
-  padding: 3px 6px;
-  font-size: 12px;
-  border: 1px solid var(--outline-variant);
-  border-radius: var(--radius-sm);
-  background-color: var(--surface-container-lowest);
-  font-family: 'JetBrains Mono', monospace;
-}
-
-.grid-input-sm {
-  width: 80px;
-  padding: 3px 6px;
-  font-size: 12px;
-  border: 1px solid var(--outline-variant);
-  border-radius: var(--radius-sm);
-  background-color: var(--surface-container-lowest);
-  font-family: 'JetBrains Mono', monospace;
-  text-align: right;
 }
 
 /* ==========================================================================
@@ -1009,13 +1035,13 @@ body {
 
 .bmr-meta-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    padding: 12px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    padding: 8px;
     background-color: var(--surface-container-low);
     border: 1px solid var(--outline-variant);
     border-radius: var(--radius-sm);
-    margin-bottom: 20px;
+    margin-bottom: 24px;
 }
 
 .bmr-meta-item {
@@ -1041,8 +1067,8 @@ body {
 
 .bmr-phase-banner {
     background-color: var(--surface-container-high);
-    border-left: 4px solid var(--primary);
-    padding: 6px 12px;
+    border-left: 1px solid var(--outline-variant);
+    padding: var(--spacing-sm);
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.04em;
@@ -1056,14 +1082,14 @@ body {
     width: 100%;
     border-collapse: collapse;
     font-size: 12px;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
 }
 
 .bmr-table th {
     background-color: var(--surface-container);
     color: var(--on-surface);
     font-weight: 700;
-    padding: 6px 8px;
+    padding: 4px 8px;
     border: 1px solid var(--outline);
     text-align: left;
     font-size: 11px;
@@ -1072,7 +1098,7 @@ body {
 }
 
 .bmr-table td {
-    padding: 6px 8px;
+    padding: 4px 8px;
     border: 1px solid var(--outline-variant);
     vertical-align: middle;
     color: var(--on-surface);
@@ -1098,8 +1124,8 @@ body {
 }
 
 .bmr-instructions-box {
-    margin-top: 20px;
-    padding: 12px 16px;
+    margin-top: 24px;
+    padding: 8px 16px;
     background-color: var(--surface-container-low);
     border: 1px solid var(--outline-variant);
     border-radius: var(--radius-sm);
@@ -1115,7 +1141,7 @@ body {
 }
 
 .bmr-instructions-list {
-    margin-left: 18px;
+    margin-left: 16px;
     font-size: 12px;
     color: var(--on-surface);
     line-height: 1.6;
@@ -1123,9 +1149,9 @@ body {
 
 .bmr-signoff-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin-top: 20px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 24px;
     padding-top: 16px;
     border-top: 2px solid var(--outline);
 }
@@ -1133,7 +1159,7 @@ body {
 .bmr-signoff-card {
     border: 1px solid var(--outline-variant);
     border-radius: var(--radius-sm);
-    padding: 10px;
+    padding: 8px;
     background-color: var(--surface-container-lowest);
 }
 
@@ -1142,7 +1168,7 @@ body {
     font-weight: 700;
     text-transform: uppercase;
     color: var(--on-surface-variant);
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     padding-bottom: 4px;
     border-bottom: 1px solid var(--outline-variant);
 }
@@ -1163,8 +1189,8 @@ body {
 
 .reorder-summary-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
     margin-bottom: 16px;
 }
 
@@ -1172,7 +1198,7 @@ body {
     background-color: var(--surface-container-low);
     border: 1px solid var(--outline-variant);
     border-radius: var(--radius-sm);
-    padding: 12px 14px;
+    padding: 8px 16px;
 }
 
 .reorder-kpi-label {
@@ -1193,7 +1219,7 @@ body {
 
 .pack-chip {
     display: inline-block;
-    padding: 2px 6px;
+    padding: 2px 4px;
     border-radius: var(--radius-sm);
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
@@ -1207,6 +1233,472 @@ body {
     color: var(--primary);
     font-weight: 700;
     font-family: 'JetBrains Mono', monospace;
+}
+
+/* ==========================================================================
+   PRIMARY NAVIGATION TAB BAR (DESIGN.md Spec)
+   ========================================================================== */
+
+.top-nav-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  border-bottom: 1px solid var(--outline-variant);
+  margin-bottom: var(--spacing-lg);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.top-nav-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.top-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  color: var(--on-surface-variant);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.top-nav-btn:hover {
+  color: var(--on-surface);
+}
+
+.top-nav-btn.active {
+  border-bottom: 2px solid var(--primary);
+  margin-bottom: -1px;
+  color: var(--on-surface);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   SCHEDULE & CALENDAR TOOLBAR (DESIGN.md Spec)
+   ========================================================================== */
+
+.schedule-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  width: 100%;
+  min-width: 0;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-default);
+  margin-bottom: var(--spacing-md);
+}
+
+.schedule-toolbar-left,
+.schedule-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.segmented-control {
+  display: inline-flex;
+  height: var(--control-height);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-default);
+  overflow: hidden;
+  background-color: var(--surface-container-lowest);
+}
+
+.segmented-btn {
+  height: var(--control-height-inner);
+  padding: 0 16px;
+  border: none;
+  background-color: transparent;
+  color: var(--on-surface-variant);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.segmented-btn:not(:last-child) {
+  border-right: 1px solid var(--outline-variant);
+}
+
+.segmented-btn:hover {
+  background-color: var(--surface-container-low);
+  color: var(--on-surface);
+}
+
+.segmented-btn.active {
+  background-color: var(--primary);
+  color: var(--on-primary);
+  font-weight: 600;
+}
+
+.schedule-toolbar .btn,
+.schedule-toolbar .select-field {
+  height: var(--control-height);
+  flex-shrink: 0;
+}
+
+.stepper-container {
+  display: inline-flex;
+  align-items: center;
+  height: var(--control-height);
+  flex-shrink: 0;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-default);
+  overflow: hidden;
+  background-color: var(--surface-container-lowest);
+}
+
+.stepper-btn {
+  height: var(--control-height-inner);
+  width: var(--control-height-inner);
+  padding: 0;
+  border: none;
+  background-color: transparent;
+  color: var(--on-surface);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease;
+}
+
+.stepper-btn:hover {
+  background-color: var(--surface-container-high);
+}
+
+.stepper-label {
+  padding: 0 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--on-surface);
+  border-left: 1px solid var(--outline-variant);
+  border-right: 1px solid var(--outline-variant);
+  line-height: var(--control-height-inner);
+  height: var(--control-height-inner);
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   CALENDAR MATRIX VIEW (7-Column Grid, 120px min-height)
+   ========================================================================== */
+
+.calendar-matrix-container {
+  background-color: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-default);
+  overflow: hidden;
+  margin-bottom: var(--spacing-md);
+}
+
+.calendar-matrix-header {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  background-color: var(--surface-container);
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.calendar-matrix-header-col {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 8px 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--on-surface);
+  text-align: center;
+}
+
+.calendar-matrix-header-col:not(:last-child) {
+  border-right: 1px solid var(--outline-variant);
+}
+
+.calendar-matrix-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 1px;
+  background-color: var(--outline-variant);
+  width: 100%;
+}
+
+.calendar-day-cell {
+  background-color: var(--surface-container-lowest);
+  min-height: 120px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: background-color 0.15s ease;
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.calendar-day-cell:hover {
+  background-color: var(--surface-bright);
+}
+
+.calendar-day-cell.other-month {
+  background-color: var(--surface-container-low);
+  opacity: 0.6;
+}
+
+.calendar-day-cell.is-today {
+  box-shadow: inset 0 0 0 1.5px var(--primary);
+  background-color: var(--surface-bright);
+}
+
+.calendar-day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.calendar-day-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--on-surface-variant);
+}
+
+.calendar-day-cell.is-today .calendar-day-num {
+  background-color: var(--primary);
+  color: var(--on-primary);
+  padding: 1px 4px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+}
+
+.calendar-day-batch-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--outline);
+}
+
+/* Scheduled Batch Cards inside Day Cells */
+.scheduled-card {
+  min-height: 26px;
+  border-radius: var(--radius-sm);
+  padding: 4px 4px;
+  min-width: 0;
+  margin-bottom: 4px;
+  background-color: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  overflow: hidden;
+}
+
+.scheduled-card:hover {
+  background-color: var(--surface-container-high);
+  border-color: var(--outline);
+}
+
+.scheduled-card-left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.scheduled-card-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 4px;
+  border-radius: 2px;
+  background-color: var(--primary-container);
+  color: var(--on-primary-container);
+  letter-spacing: 0.02em;
+}
+
+.scheduled-card-title {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--on-surface);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scheduled-card-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.scheduled-card-chip {
+  font-size: 9px;
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
+/* ==========================================================================
+   QUEUE LEDGER VIEW (Alternating Rows, 8px Vertical Padding)
+   ========================================================================== */
+
+.queue-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.queue-table thead th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--on-surface);
+  padding: 8px 8px;
+  text-align: left;
+  border-bottom: 2px solid var(--on-surface);
+  background-color: var(--surface-container-lowest);
+  white-space: nowrap;
+}
+
+.queue-table tbody tr:nth-child(odd) {
+  background-color: var(--surface-container-lowest);
+}
+
+.queue-table tbody tr:nth-child(even) {
+  background-color: var(--surface-container-low);
+}
+
+.queue-table tbody tr:hover {
+  background-color: var(--surface-container-high);
+}
+
+.queue-table tbody td {
+  padding: 8px 8px;
+  border-bottom: 1px solid var(--outline-variant);
+  font-size: 13px;
+  color: var(--on-surface);
+  vertical-align: middle;
+}
+
+/* ==========================================================================
+   SLIDE-OVER BATCH DETAILS DRAWER (460px Elevation 2, 8px Backdrop Blur)
+   ========================================================================== */
+
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(20, 29, 23, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1050;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.drawer-backdrop.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.slide-over-drawer {
+  position: fixed;
+  top: 0;
+  right: -480px;
+  width: 460px;
+  max-width: 100%;
+  height: 100vh;
+  background-color: var(--surface-container-lowest);
+  border-left: 1px solid var(--outline-variant);
+  z-index: 1060;
+  display: flex;
+  flex-direction: column;
+  transition: right 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slide-over-drawer.open {
+  right: 0;
+}
+
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--outline-variant);
+  background-color: var(--surface-container-lowest);
+}
+
+.drawer-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--on-surface);
+}
+
+.drawer-close-btn {
+  background: transparent;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.drawer-close-btn:hover {
+  background-color: var(--surface-container-high);
+  color: var(--on-surface);
+}
+
+.drawer-body {
+  padding: var(--spacing-md);
+  overflow-y: auto;
+  flex: 1;
+}
+
+.drawer-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--outline-variant);
+  background-color: var(--surface-container-low);
 }
 
 /* ==========================================================================
@@ -1227,18 +1719,19 @@ body {
 
     /* Hide entire UI except the BMR modal contents */
     .app-header,
+    .system-header,
+    .top-nav-bar,
+    .schedule-toolbar,
+    .slide-over-drawer,
+    .drawer-backdrop,
     .left-pane,
     .right-pane,
-    .nav-tabs,
     .table-toolbar,
     .alert-banner,
     .toast-container,
     .modal-backdrop:not(#modal-bmr-sheet),
     #modal-bmr-sheet .modal-header,
     #modal-bmr-sheet .modal-footer,
-    #modal-stage-batch,
-    #modal-stock-entry,
-    #modal-reorder-drafter,
     .btn {
         display: none !important;
     }

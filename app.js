@@ -5,7 +5,10 @@
  */
 
 let state = null;
-let currentView = 'bom';
+let currentView = 'schedule';
+let scheduleViewMode = 'week'; // 'week', 'month', 'queue'
+let scheduleFilterRecipe = 'ALL';
+let scheduleWeekOffset = 0;
 let bomFilterType = 'ALL';
 let ledgerFilterType = 'ALL';
 let ledgerSearchQuery = '';
@@ -22,13 +25,19 @@ let debounceTimer = null;
 document.addEventListener('DOMContentLoaded', () => {
   fetchState();
 
-  // Escape key closes open modals
+  // Escape key closes open modals and slide-over drawers
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       closeStagingModal();
       closeStockModal();
+      closeBatchDrawer();
+      closeBmrModal();
+      closeReorderModal();
     }
   });
+
+  // Clear a validation highlight as soon as the operator edits the field.
+  document.addEventListener('input', (e) => e.target.classList?.remove('is-invalid'));
 });
 
 async function fetchState() {
@@ -52,10 +61,12 @@ function renderAll() {
 
   renderRoleButtons();
   renderBatchAddForm();
+  renderDrawerFgSelect();
+  renderScheduleRecipeFilter();
   renderFeasibilityCard();
   renderNavigationBadges();
   renderTimelineStrip();
-  renderScheduleTable();
+  renderScheduleViews();
   renderBomTable();
   renderLedgerTable();
   renderMasterTable();
@@ -66,9 +77,9 @@ function renderAll() {
 function switchView(viewName) {
   currentView = viewName;
 
-  document.querySelectorAll('.nav-tab-btn').forEach(btn => btn.classList.remove('active'));
-  const activeBtn = document.getElementById(`tab-btn-${viewName}`);
-  if (activeBtn) activeBtn.classList.add('active');
+  document.querySelectorAll('.top-nav-btn').forEach(btn => btn.classList.remove('active'));
+  const activeTopBtn = document.getElementById(`top-nav-btn-${viewName}`);
+  if (activeTopBtn) activeTopBtn.classList.add('active');
 
   document.querySelectorAll('.view-panel').forEach(panel => panel.style.display = 'none');
   const activePanel = document.getElementById(`view-${viewName}`);
@@ -156,11 +167,13 @@ function updateEquivPreview() {
   if (!preview || !fgCode || !state.products[fgCode]) return;
 
   const unitWeight = state.products[fgCode].unit_weight_grams || 5.0;
+  // F1: one pot is the product's own SFG batch weight, not a fixed 1.5 KG.
+  const sfgWeight = state.products[fgCode].sfg_batch_weight_grams || 1500.0;
   let bulkKg = qty;
   let pieces = Math.round((bulkKg * 1000.0) / unitWeight);
 
   if (unitType === 'POTS') {
-    bulkKg = qty * 1.5;
+    bulkKg = qty * (sfgWeight / 1000.0);
     pieces = Math.round((bulkKg * 1000.0) / unitWeight);
   } else if (unitType === 'PIECES') {
     pieces = Math.round(qty);
@@ -208,18 +221,31 @@ function renderFeasibilityCard() {
 
 function renderNavigationBadges() {
   const sim = state.simulation;
-  document.getElementById('badge-shortage-count').textContent = sim ? sim.shortage_count_total : 0;
-  document.getElementById('badge-ledger-count').textContent = state.ledger.length;
-  document.getElementById('badge-batch-count').textContent = state.batches.length;
+  const shortageCount = sim ? sim.shortage_count_total : 0;
+  const batchPlanCount = (state.weekly_plan || []).length;
+  const ledgerCount = (state.ledger || []).length;
+  const historyCount = (state.batches || []).length;
 
   let reorders = 0;
-  state.material_order.forEach(code => {
+  (state.material_order || []).forEach(code => {
     const m = state.materials[code];
-    const amu = m.avg_monthly_usage || 1;
-    const coverDays = (m.stock_on_hand / amu) * 30;
-    if (coverDays <= m.lead_time_days) reorders++;
+    if (m) {
+      const amu = m.avg_monthly_usage || 1;
+      const coverDays = (m.stock_on_hand / amu) * 30;
+      if (coverDays <= m.lead_time_days) reorders++;
+    }
   });
-  document.getElementById('badge-reorder-count').textContent = reorders;
+
+  const setEl = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  };
+
+  setEl('top-badge-schedule-count', batchPlanCount);
+  setEl('top-badge-shortage-count', shortageCount);
+  setEl('top-badge-ledger-count', ledgerCount);
+  setEl('top-badge-reorder-count', reorders);
+  setEl('top-badge-batch-count', historyCount);
 }
 
 // ==========================================
@@ -262,26 +288,249 @@ function toggleDayFilter(day) {
     selectedDay = day;
   }
   renderTimelineStrip();
-  renderScheduleTable();
+  renderScheduleViews();
 }
 
 // ==========================================
-// VIEW 1: WEEKLY PRODUCTION SCHEDULE TABLE
+// DEDICATED VIEW 1: PRODUCTION SCHEDULE & CALENDAR
 // ==========================================
 
-function renderScheduleTable() {
+function setScheduleViewMode(mode) {
+  scheduleViewMode = mode;
+  ['week', 'month', 'queue'].forEach(m => {
+    const btn = document.getElementById(`sched-view-${m}`);
+    if (btn) {
+      if (m === mode) btn.classList.add('active');
+      else btn.classList.remove('active');
+    }
+  });
+
+  const calContainer = document.getElementById('schedule-calendar-container');
+  const queueContainer = document.getElementById('schedule-queue-container');
+
+  if (mode === 'queue') {
+    if (calContainer) calContainer.style.display = 'none';
+    if (queueContainer) queueContainer.style.display = 'block';
+  } else {
+    if (calContainer) calContainer.style.display = 'block';
+    if (queueContainer) queueContainer.style.display = 'none';
+  }
+
+  updateStepperLabel();
+  renderScheduleViews();
+}
+
+function stepScheduleDate(delta) {
+  scheduleWeekOffset += delta;
+  updateStepperLabel();
+  renderScheduleViews();
+}
+
+function updateStepperLabel() {
+  const lbl = document.getElementById('schedule-stepper-label');
+  if (!lbl) return;
+
+  if (scheduleViewMode === 'month') {
+    lbl.textContent = 'September 2026';
+  } else if (scheduleViewMode === 'queue') {
+    lbl.textContent = 'Active Queue';
+  } else {
+    if (scheduleWeekOffset === 0) {
+      lbl.textContent = 'Week 3 • Sep 2026';
+    } else if (scheduleWeekOffset > 0) {
+      lbl.textContent = `Week ${3 + scheduleWeekOffset} • Sep 2026`;
+    } else {
+      lbl.textContent = `Week ${Math.max(1, 3 + scheduleWeekOffset)} • Sep 2026`;
+    }
+  }
+}
+
+function renderScheduleRecipeFilter() {
+  const sel = document.getElementById('sched-filter-recipe');
+  if (!sel || !state || !state.products) return;
+
+  const current = sel.value || 'ALL';
+  let html = '<option value="ALL">Recipe: All</option>';
+  (state.product_order || Object.keys(state.products)).forEach(fg => {
+    const p = state.products[fg];
+    html += `<option value="${fg}">${p.name} (${fg})</option>`;
+  });
+  sel.innerHTML = html;
+  sel.value = current;
+}
+
+function onScheduleFilterChange() {
+  const sel = document.getElementById('sched-filter-recipe');
+  if (sel) scheduleFilterRecipe = sel.value;
+  renderScheduleViews();
+}
+
+function renderScheduleViews() {
+  updateStepperLabel();
+  renderScheduleRecipeFilter();
+
+  if (scheduleViewMode === 'queue') {
+    renderScheduleQueueTable();
+  } else {
+    renderScheduleCalendar();
+  }
+}
+
+function renderScheduleCalendar() {
+  const grid = document.getElementById('calendar-matrix-grid');
+  if (!grid || !state) return;
+
+  let allBatches = state.weekly_plan || [];
+  if (scheduleFilterRecipe !== 'ALL') {
+    allBatches = allBatches.filter(b => b.fg_code === scheduleFilterRecipe);
+  }
+
+  if (scheduleViewMode === 'month') {
+    renderMonthCalendarGrid(grid, allBatches);
+  } else {
+    renderWeekCalendarGrid(grid, allBatches);
+  }
+}
+
+function renderWeekCalendarGrid(grid, allBatches) {
+  const weekDays = [
+    { name: 'Monday', short: 'Mon', dateNum: 14 + scheduleWeekOffset * 7 },
+    { name: 'Tuesday', short: 'Tue', dateNum: 15 + scheduleWeekOffset * 7 },
+    { name: 'Wednesday', short: 'Wed', dateNum: 16 + scheduleWeekOffset * 7 },
+    { name: 'Thursday', short: 'Thu', dateNum: 17 + scheduleWeekOffset * 7 },
+    { name: 'Friday', short: 'Fri', dateNum: 18 + scheduleWeekOffset * 7 },
+    { name: 'Saturday', short: 'Sat', dateNum: 19 + scheduleWeekOffset * 7 },
+    { name: 'Sunday', short: 'Sun', dateNum: 20 + scheduleWeekOffset * 7 }
+  ];
+
+  const todayWeekday = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date().getDay()];
+
+  grid.innerHTML = weekDays.map(d => {
+    let dayBatches = allBatches.filter(b => b.day === d.name);
+    if (selectedDay && selectedDay !== d.name) {
+      dayBatches = [];
+    }
+
+    const isToday = (d.name === todayWeekday && scheduleWeekOffset === 0);
+
+    const cardsHtml = dayBatches.map(b => {
+      const prod = state.products[b.fg_code] || { name: b.fg_code, category: 'Lip Care' };
+      const isCompleted = (b.status === 'COMPLETED');
+      let catTag = 'LB';
+      if (b.fg_code.includes('D0')) catTag = 'DEO';
+      else if (b.fg_code.includes('HO')) catTag = 'OIL';
+      else if (b.fg_code.includes('SB')) catTag = 'SCRUB';
+
+      return `
+        <div class="scheduled-card" onclick="openBatchDrawer('${b.id}')" title="${b.batch_ref}: ${prod.name} (${Number(b.target_bulk_kg).toFixed(1)}kg / ${Math.round(b.target_pieces)}pcs)">
+          <div class="scheduled-card-left">
+            <span class="scheduled-card-tag">${catTag}</span>
+            <span class="scheduled-card-title">${prod.name}</span>
+          </div>
+          <div class="scheduled-card-right">
+            <span class="scheduled-card-chip status-chip ${isCompleted ? 'chip-success' : 'chip-info'}">
+              ${Number(b.target_bulk_kg).toFixed(1)}k
+            </span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const emptyState = (dayBatches.length === 0)
+      ? `<div style="font-size: 11px; color: var(--outline); padding: 8px 4px; font-style: italic;">No batches</div>`
+      : '';
+
+    return `
+      <div class="calendar-day-cell ${isToday ? 'is-today' : ''}">
+        <div class="calendar-day-header">
+          <span class="calendar-day-num">${d.dateNum > 0 ? d.dateNum : ''}</span>
+          <span class="calendar-day-batch-count">${dayBatches.length} batches</span>
+        </div>
+        <div style="display: flex; flex-direction: column; flex: 1;">
+          ${cardsHtml}
+          ${emptyState}
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" style="font-size: 10px; padding: 2px 4px; margin-top: auto; border: 1px dashed var(--outline-variant); background: transparent; width: 100%;" onclick="openNewBatchDrawerForDay('${d.name}')">
+          + Add
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderMonthCalendarGrid(grid, allBatches) {
+  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const totalCells = 35;
+  const startDayCol = 1;
+  const daysInMonth = 30;
+
+  let cellsHtml = '';
+
+  for (let cellIdx = 0; cellIdx < totalCells; cellIdx++) {
+    const colIdx = cellIdx % 7;
+    const weekdayName = daysOfWeek[colIdx];
+    const monthDay = cellIdx - startDayCol + 1;
+    const isCurrentMonth = (monthDay >= 1 && monthDay <= daysInMonth);
+    const displayNum = isCurrentMonth ? monthDay : (monthDay < 1 ? 31 + monthDay : monthDay - daysInMonth);
+    const isToday = (monthDay === 10);
+
+    let cellBatches = [];
+    if (isCurrentMonth && monthDay >= 14 && monthDay <= 19) {
+      cellBatches = allBatches.filter(b => b.day === weekdayName);
+    }
+
+    const cardsHtml = cellBatches.map(b => {
+      const prod = state.products[b.fg_code] || { name: b.fg_code };
+      const isCompleted = (b.status === 'COMPLETED');
+      let catTag = 'LB';
+      if (b.fg_code.includes('D0')) catTag = 'DEO';
+      else if (b.fg_code.includes('HO')) catTag = 'OIL';
+
+      return `
+        <div class="scheduled-card" onclick="openBatchDrawer('${b.id}')" title="${b.batch_ref}: ${prod.name}">
+          <div class="scheduled-card-left">
+            <span class="scheduled-card-tag">${catTag}</span>
+            <span class="scheduled-card-title">${prod.name}</span>
+          </div>
+          <div class="scheduled-card-right">
+            <span class="scheduled-card-chip status-chip ${isCompleted ? 'chip-success' : 'chip-info'}">
+              ${Number(b.target_bulk_kg).toFixed(0)}k
+            </span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    cellsHtml += `
+      <div class="calendar-day-cell ${!isCurrentMonth ? 'other-month' : ''} ${isToday ? 'is-today' : ''}">
+        <div class="calendar-day-header">
+          <span class="calendar-day-num">${displayNum}</span>
+          ${cellBatches.length > 0 ? `<span class="calendar-day-batch-count">${cellBatches.length} runs</span>` : ''}
+        </div>
+        <div style="display: flex; flex-direction: column; flex: 1;">
+          ${cardsHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  grid.innerHTML = cellsHtml;
+}
+
+function renderScheduleQueueTable() {
   const tbody = document.getElementById('schedule-table-body');
-  if (!tbody) return;
+  if (!tbody || !state) return;
 
   let batches = state.weekly_plan || [];
   if (selectedDay) {
     batches = batches.filter(b => b.day === selectedDay);
   }
-
-  document.getElementById('weekly-plan-count-label').textContent = `${batches.length} Batches ${selectedDay ? `(${selectedDay})` : '(Full Week)'}`;
+  if (scheduleFilterRecipe !== 'ALL') {
+    batches = batches.filter(b => b.fg_code === scheduleFilterRecipe);
+  }
 
   if (batches.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" class="text-center" style="padding: 24px; color: var(--outline);">No production batches scheduled${selectedDay ? ` for ${selectedDay}` : ''}.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" class="text-center empty-cell">No scheduled batches match current filter.</td></tr>`;
     return;
   }
 
@@ -295,8 +544,8 @@ function renderScheduleTable() {
       : `<span class="status-chip chip-info">${b.status}</span>`;
 
     const actionBtn = isCompleted
-      ? `<button class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 2px 8px;" disabled>✓ Completed</button>`
-      : `<button class="btn btn-primary btn-sm" style="font-size: 11px; padding: 2px 8px;" onclick="openStagingModal('${b.id}')">⚡ Issue Batch</button>`;
+      ? `<button class="btn btn-secondary btn-sm btn-xs" disabled>✓ Completed</button>`
+      : `<button class="btn btn-primary btn-sm btn-xs" onclick="openStagingModal('${b.id}')">Issue</button>`;
 
     const deleteBtn = (isCompleted && role !== 'admin')
       ? ``
@@ -304,18 +553,23 @@ function renderScheduleTable() {
 
     return `
       <tr style="${isCompleted ? 'opacity: 0.7;' : ''}">
-        <td class="data-tabular" style="font-weight: 700;">${b.day}</td>
-        <td class="data-tabular" style="font-size: 12px; color: var(--primary); font-weight: 600;">${b.batch_ref}</td>
-        <td class="data-tabular">${b.fg_code}</td>
+        <td class="data-tabular font-bold">${b.day}</td>
+        <td class="data-tabular">
+          <button type="button" class="btn btn-secondary btn-sm" style="padding: 2px 4px; font-weight: 700; color: var(--primary);" onclick="openBatchDrawer('${b.id}')">
+            ${b.batch_ref}
+          </button>
+        </td>
+        <td class="data-tabular" style="font-size: 12px;">${b.fg_code}</td>
         <td><strong>${prod.name}</strong></td>
-        <td class="data-tabular" style="font-size: 11px;">${b.unit_type}</td>
+        <td class="data-tabular helper-text">${b.unit_type}</td>
         <td class="text-right data-tabular">${Number(b.target_qty).toFixed(1)}</td>
-        <td class="text-right data-tabular" style="font-weight: 700;">${Number(b.target_bulk_kg).toFixed(3)} KG</td>
+        <td class="text-right data-tabular font-bold">${Number(b.target_bulk_kg).toFixed(3)} KG</td>
         <td class="text-right data-tabular">${Math.round(b.target_pieces)} PCS</td>
         <td class="text-center">${statusBadge}</td>
         <td class="text-center" style="white-space: nowrap;">
-          <button class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 2px 6px; margin-right: 4px;" onclick="openBmrModal('${b.id}')" title="Print Floor Scaling Sheet">🖨 BMR</button>
+          <button class="btn btn-secondary btn-sm btn-xs" onclick="openBmrModal('${b.id}')" title="Print Floor Scaling Sheet">BMR</button>
           ${actionBtn}
+          <button class="btn btn-secondary btn-sm btn-xs" onclick="openBatchDrawer('${b.id}')" title="Edit Batch Details">✎ Edit</button>
           ${deleteBtn}
         </td>
       </tr>
@@ -323,11 +577,250 @@ function renderScheduleTable() {
   }).join('');
 }
 
+// ==========================================
+// SLIDE-OVER BATCH DETAILS DRAWER CONTROLLERS
+// ==========================================
+
+function openNewBatchDrawer() {
+  openNewBatchDrawerForDay('Monday');
+}
+
+function openNewBatchDrawerForDay(day) {
+  document.getElementById('drawer-batch-id').value = '';
+  document.getElementById('drawer-batch-title').textContent = '+ Schedule Production Batch';
+  document.getElementById('drawer-batch-subtitle').textContent = 'Define recipe and volume for weekly compounding schedule';
+  document.getElementById('drawer-batch-day').value = day || 'Monday';
+
+  renderDrawerFgSelect();
+  const fgSelect = document.getElementById('drawer-batch-fg');
+  if (fgSelect && fgSelect.options.length > 0) {
+    fgSelect.selectedIndex = 0;
+  }
+
+  document.getElementById('drawer-batch-unit').value = 'BULK_KG';
+  document.getElementById('drawer-batch-qty').value = '51.0';
+  document.getElementById('drawer-batch-buffer').value = '0.0';
+  document.getElementById('drawer-batch-ref').value = '';
+
+  const statusGroup = document.getElementById('drawer-status-group');
+  if (statusGroup) statusGroup.style.display = 'none';
+
+  const delBtn = document.getElementById('drawer-btn-delete');
+  if (delBtn) delBtn.style.display = 'none';
+
+  updateDrawerPreview();
+
+  document.getElementById('drawer-batch-backdrop').classList.add('open');
+  document.getElementById('drawer-batch-details').classList.add('open');
+}
+
+function openBatchDrawer(batchId) {
+  const batch = (state.weekly_plan || []).find(b => b.id === batchId);
+  if (!batch) return;
+
+  document.getElementById('drawer-batch-id').value = batch.id;
+  document.getElementById('drawer-batch-title').textContent = `${batch.batch_ref}`;
+  document.getElementById('drawer-batch-subtitle').textContent = `Scheduled on ${batch.day} • ${batch.fg_code}`;
+
+  document.getElementById('drawer-batch-day').value = batch.day;
+
+  renderDrawerFgSelect();
+  document.getElementById('drawer-batch-fg').value = batch.fg_code;
+  document.getElementById('drawer-batch-unit').value = batch.unit_type;
+  document.getElementById('drawer-batch-qty').value = Number(batch.target_qty).toFixed(1);
+  document.getElementById('drawer-batch-buffer').value = Number(batch.yield_buffer_percent || 0).toFixed(1);
+  document.getElementById('drawer-batch-ref').value = batch.batch_ref;
+
+  const statusGroup = document.getElementById('drawer-status-group');
+  if (statusGroup) statusGroup.style.display = 'block';
+
+  const statusChip = document.getElementById('drawer-batch-status-chip');
+  if (statusChip) {
+    if (batch.status === 'COMPLETED') {
+      statusChip.className = 'status-chip chip-success';
+      statusChip.textContent = 'COMPLETED';
+    } else {
+      statusChip.className = 'status-chip chip-info';
+      statusChip.textContent = batch.status || 'PLANNED';
+    }
+  }
+
+  const role = state.user_role || 'admin';
+  const delBtn = document.getElementById('drawer-btn-delete');
+  if (delBtn) {
+    delBtn.style.display = (batch.status === 'COMPLETED' && role !== 'admin') ? 'none' : 'block';
+  }
+
+  updateDrawerPreview();
+
+  document.getElementById('drawer-batch-backdrop').classList.add('open');
+  document.getElementById('drawer-batch-details').classList.add('open');
+}
+
+function closeBatchDrawer() {
+  const backdrop = document.getElementById('drawer-batch-backdrop');
+  const drawer = document.getElementById('drawer-batch-details');
+  if (backdrop) backdrop.classList.remove('open');
+  if (drawer) drawer.classList.remove('open');
+}
+
+function renderDrawerFgSelect() {
+  const select = document.getElementById('drawer-batch-fg');
+  if (!select || !state || !state.products) return;
+
+  const current = select.value;
+  select.innerHTML = (state.product_order || Object.keys(state.products)).map(fg => {
+    const p = state.products[fg];
+    return `<option value="${fg}">${p.name} (${fg})</option>`;
+  }).join('');
+
+  if (current && state.products[current]) {
+    select.value = current;
+  }
+}
+
+function onDrawerFgChange(fg_code) {
+  updateDrawerPreview();
+}
+
+function onDrawerUnitChange(unit) {
+  updateDrawerPreview();
+}
+
+function updateDrawerPreview() {
+  const fgSelect = document.getElementById('drawer-batch-fg');
+  if (!fgSelect) return;
+  const fg_code = fgSelect.value;
+  const unit_type = document.getElementById('drawer-batch-unit').value;
+  const target_qty = parseFloat(document.getElementById('drawer-batch-qty').value) || 0;
+  const buffer = parseFloat(document.getElementById('drawer-batch-buffer').value) || 0;
+
+  const prod = (state && state.products) ? state.products[fg_code] || { unit_weight_grams: 5.0, sfg_batch_weight_grams: 1500.0 } : { unit_weight_grams: 5.0, sfg_batch_weight_grams: 1500.0 };
+  const unit_weight = prod.unit_weight_grams || 5.0;
+  const sfg_weight = prod.sfg_batch_weight_grams || 1500.0;
+
+  let bulk_kg = 0;
+  let pieces = 0;
+
+  if (unit_type === 'POTS') {
+    bulk_kg = target_qty * (sfg_weight / 1000.0);
+    pieces = Math.round((bulk_kg * 1000.0) / unit_weight);
+  } else if (unit_type === 'PIECES') {
+    pieces = Math.round(target_qty);
+    bulk_kg = (pieces * unit_weight) / 1000.0;
+  } else { // BULK_KG
+    bulk_kg = target_qty;
+    pieces = Math.round((bulk_kg * 1000.0) / unit_weight);
+  }
+
+  const equivEl = document.getElementById('drawer-batch-equiv-preview');
+  if (equivEl) {
+    equivEl.innerHTML = `Equivalent: <strong>${bulk_kg.toFixed(3)} KG</strong> Bulk Mass &bull; <strong>${pieces.toLocaleString()} Pieces</strong> (Buffer: ${buffer.toFixed(1)}%)`;
+  }
+
+  const sfgEl = document.getElementById('drawer-batch-sfg-standard');
+  if (sfgEl) sfgEl.textContent = `${sfg_weight.toLocaleString()} g`;
+
+  const weightEl = document.getElementById('drawer-batch-unit-weight');
+  if (weightEl) weightEl.textContent = `${unit_weight.toFixed(1)} g`;
+}
+
+// A batch with no positive quantity is not a plan. Refuse at the field, so the operator
+// sees which input is wrong instead of a generic failure toast. Returns null when invalid.
+function readBatchQty(inputId) {
+  const el = document.getElementById(inputId);
+  const qty = parseFloat(el.value);
+  const valid = Number.isFinite(qty) && qty > 0;
+  el.classList.toggle('is-invalid', !valid);
+  if (valid) return qty;
+  el.focus();
+  showToast('Target quantity must be greater than zero.', 'error');
+  return null;
+}
+
+async function saveBatchFromDrawer() {
+  const id = document.getElementById('drawer-batch-id').value;
+  const day = document.getElementById('drawer-batch-day').value;
+  const fg_code = document.getElementById('drawer-batch-fg').value;
+  const unit_type = document.getElementById('drawer-batch-unit').value;
+  const target_qty = readBatchQty('drawer-batch-qty');
+  if (target_qty === null) return;
+  const yield_buffer = parseFloat(document.getElementById('drawer-batch-buffer').value) || 0.0;
+  const batch_ref = document.getElementById('drawer-batch-ref').value.trim();
+
+  try {
+    let endpoint = '/api/plan/batch/update';
+    let payload = { id, day, fg_code, unit_type, target_qty, yield_buffer_percent: yield_buffer, batch_ref };
+
+    if (!id) {
+      endpoint = '/api/plan/batch/add';
+      payload = { day, fg_code, unit_type, target_qty, yield_buffer_percent: yield_buffer, batch_ref };
+    }
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const errTxt = await res.text();
+      throw new Error(errTxt || 'Failed to save batch');
+    }
+
+    state = await res.json();
+    closeBatchDrawer();
+    renderAll();
+    showToast(id ? 'Batch changes saved' : 'Batch added to schedule', 'success');
+  } catch (err) {
+    console.error(err);
+    showToast(err.message || 'Error saving batch', 'error');
+  }
+}
+
+async function deleteBatchFromDrawer() {
+  const id = document.getElementById('drawer-batch-id').value;
+  if (!id) return;
+
+  if (!confirm('Are you sure you want to remove this batch from the schedule?')) {
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/plan/batch/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    });
+
+    if (!res.ok) {
+      const errTxt = await res.text();
+      throw new Error(errTxt || 'Failed to delete batch');
+    }
+
+    state = await res.json();
+    closeBatchDrawer();
+    renderAll();
+    showToast('Batch removed from schedule', 'info');
+  } catch (err) {
+    console.error(err);
+    showToast(err.message || 'Failed to delete batch', 'error');
+  }
+}
+
+function printBmrFromDrawer() {
+  const id = document.getElementById('drawer-batch-id').value;
+  if (!id) return;
+  closeBatchDrawer();
+  openBmrModal(id);
+}
+
 async function submitAddBatch() {
   const day = document.getElementById('input-batch-day').value;
   const fg_code = document.getElementById('input-batch-fg').value;
   const unit_type = document.getElementById('input-batch-unit').value;
-  const target_qty = parseFloat(document.getElementById('input-batch-qty').value) || 1.0;
+  const target_qty = readBatchQty('input-batch-qty');
+  if (target_qty === null) return;
   const yield_buffer = parseFloat(document.getElementById('input-batch-buffer').value) || 0.0;
   const batch_ref = document.getElementById('input-batch-ref').value.trim();
 
@@ -339,6 +832,7 @@ async function submitAddBatch() {
         day, fg_code, unit_type, target_qty, yield_buffer_percent: yield_buffer, batch_ref
       })
     });
+    if (!res.ok) throw new Error('server rejected the batch');
     state = await res.json();
     renderAll();
     showToast(`Batch added to ${day} schedule`, 'success');
@@ -366,18 +860,6 @@ async function deleteScheduledBatch(batchId) {
   } catch (err) {
     console.error(err);
     showToast(err.message, 'error');
-  }
-}
-
-async function resetToXiaoSchedule() {
-  try {
-    const res = await fetch('/api/plan/reset_week', { method: 'POST' });
-    state = await res.json();
-    selectedDay = null;
-    renderAll();
-    showToast('Weekly schedule loaded from workbook', 'success');
-  } catch (err) {
-    console.error(err);
   }
 }
 
@@ -411,7 +893,7 @@ function renderBomTable() {
   document.getElementById('bom-summary-count').textContent = `${rows.length} Material Lines Active`;
 
   if (rows.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" class="text-center" style="padding: 24px; color: var(--outline);">No materials matching the selected filter.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="text-center empty-cell">No materials matching the selected filter.</td></tr>`;
     return;
   }
 
@@ -426,7 +908,7 @@ function renderBomTable() {
       : `<span class="status-chip chip-success">[OK] SUFF</span>`;
 
     const deficitDayBadge = r.first_deficit_day
-      ? `<span class="status-chip chip-error" style="font-size: 11px;">${r.first_deficit_day}</span>`
+      ? `<span class="status-chip chip-error helper-text">${r.first_deficit_day}</span>`
       : `<span style="color: var(--outline); font-size: 11px;">None</span>`;
 
     const isExpanded = expandedDrilldowns.has(r.code);
@@ -434,10 +916,10 @@ function renderBomTable() {
 
     let mainRow = `
       <tr style="cursor: pointer;" onclick="toggleDrilldown('${r.code}')">
-        <td class="data-tabular" style="font-weight: 700;">${r.code}</td>
-        <td>${r.description}</td>
+        <td class="data-tabular font-bold">${r.code}</td>
+        <td class="cell-truncate" title="${r.description}">${r.description}</td>
         <td><span class="label-caps">${isRM ? 'Raw Material' : 'Packaging'}</span></td>
-        <td class="text-right data-tabular" style="font-weight: 700;">${reqStr}</td>
+        <td class="text-right data-tabular font-bold">${reqStr}</td>
         <td class="text-right data-tabular" style="font-weight: 700; color: var(--primary);">${sohStr}</td>
         <td class="text-right data-tabular" style="font-weight: 700; color: ${r.is_shortage ? 'var(--error)' : 'inherit'};">${balStr}</td>
         <td class="text-center">${deficitDayBadge}</td>
@@ -456,7 +938,7 @@ function renderBomTable() {
             <tr>
               <td class="data-tabular"><strong>${b.day}</strong></td>
               <td class="data-tabular">${b.batch_ref}</td>
-              <td>${b.fg_name}</td>
+              <td class="cell-truncate" title="${b.fg_name}">${b.fg_name}</td>
               <td class="data-tabular">${b.batch_size_str}</td>
               <td class="text-right data-tabular" style="font-weight: 700; color: var(--primary);">${b.qty_required.toFixed(isRM ? 3 : 0)} ${b.uom}</td>
             </tr>
@@ -573,7 +1055,7 @@ function renderStagingTable() {
 
     // Substitute dropdown
     const subs = state.substitutes[item.rm_code] || [];
-    let subSelect = `<select class="input-table-cell" style="font-size: 11px;" onchange="onStagingSubstituteChange(${idx}, this.value)">`;
+    let subSelect = `<select class="input-table-cell helper-text" onchange="onStagingSubstituteChange(${idx}, this.value)">`;
     subSelect += `<option value="${item.rm_code}">${item.rm_code} (Default)</option>`;
     subs.forEach(sCode => {
       const sMat = state.materials[sCode];
@@ -583,8 +1065,8 @@ function renderStagingTable() {
 
     return `
       <tr>
-        <td class="data-tabular" style="font-weight: 700;">${item.rm_code}</td>
-        <td>${item.rm_name}</td>
+        <td class="data-tabular font-bold">${item.rm_code}</td>
+        <td class="cell-truncate" title="${item.rm_name}">${item.rm_name}</td>
         <td><span class="label-caps" style="font-size: 10px;">${isRM ? 'Raw Material' : 'Packaging'}</span></td>
         <td class="text-right data-tabular">${item.theoretical_qty.toFixed(isRM ? 3 : 0)} ${item.uom}</td>
         <td>
@@ -723,7 +1205,7 @@ function renderLedgerTable() {
   }
 
   if (items.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="11" class="text-center" style="padding: 24px; color: var(--outline);">No transactions recorded in ledger.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" class="text-center empty-cell">No transactions recorded in ledger.</td></tr>`;
     return;
   }
 
@@ -743,12 +1225,12 @@ function renderLedgerTable() {
       <tr>
         <td class="data-tabular">#${tx.transaction_id}</td>
         <td class="data-tabular" style="color: var(--on-surface-variant); font-size: 11px;">${tx.timestamp}</td>
-        <td class="data-tabular" style="font-weight: 700;">${tx.material_code}</td>
+        <td class="data-tabular font-bold">${tx.material_code}</td>
         <td>${tx.material_name}</td>
         <td>${typeBadge}</td>
         <td class="text-right data-tabular" style="font-weight: 700; color: ${isIN ? 'var(--success)' : 'var(--error)'};">${qtyStr}</td>
         <td class="text-right data-tabular">${beforeStr}</td>
-        <td class="text-right data-tabular" style="font-weight: 700;">${afterStr}</td>
+        <td class="text-right data-tabular font-bold">${afterStr}</td>
         <td class="data-tabular">${tx.reference_doc || '-'}</td>
         <td>${tx.operator_name || '-'}</td>
         <td style="color: var(--on-surface-variant); font-size: 12px;">${tx.notes || '-'}</td>
@@ -802,10 +1284,10 @@ function renderMasterTable() {
 
     return `
       <tr>
-        <td class="data-tabular" style="font-weight: 700;">${r.code}</td>
-        <td>${mat.description}</td>
+        <td class="data-tabular font-bold">${r.code}</td>
+        <td class="cell-truncate" title="${mat.description}">${mat.description}</td>
         <td><span class="label-caps">${isRM ? 'Raw Material' : 'Packaging'}</span></td>
-        <td class="text-right data-tabular" style="font-weight: 700;">${sohStr}</td>
+        <td class="text-right data-tabular font-bold">${sohStr}</td>
         <td class="text-right data-tabular" style="color: var(--primary); font-weight: 600;">${comStr}</td>
         <td class="text-right data-tabular" style="font-weight: 700; color: ${r.is_shortage ? 'var(--error)' : 'inherit'};">${projStr}</td>
         <td class="text-right data-tabular">${amuStr}</td>
@@ -835,24 +1317,24 @@ function renderBatchesTable() {
   const role = state.user_role || 'admin';
 
   if (batches.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" class="text-center" style="padding: 24px; color: var(--outline);">No completed batches executed yet.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" class="text-center empty-cell">No completed batches executed yet.</td></tr>`;
     return;
   }
 
   tbody.innerHTML = batches.map(b => {
     const isCancelled = (b.status === 'CANCELLED');
     const revertBtn = (!isCancelled && role === 'admin')
-      ? `<button class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 2px 6px;" onclick="cancelCompletedBatch('${b.batch_id}')">Revert Run</button>`
+      ? `<button class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 2px 4px;" onclick="cancelCompletedBatch('${b.batch_id}')">Revert Run</button>`
       : `<span style="color: var(--outline); font-size: 11px;">-</span>`;
 
     return `
       <tr style="${isCancelled ? 'opacity: 0.5;' : ''}">
-        <td class="data-tabular" style="font-weight: 700;">${b.batch_number}</td>
+        <td class="data-tabular font-bold">${b.batch_number}</td>
         <td class="data-tabular">${b.fg_code}</td>
-        <td>${b.fg_name}</td>
+        <td class="cell-truncate" title="${b.fg_name}">${b.fg_name}</td>
         <td class="data-tabular" style="color: var(--on-surface-variant); font-size: 11px;">${b.timestamp}</td>
         <td>${b.operator_name}</td>
-        <td class="text-right data-tabular" style="font-weight: 700;">${Math.round(b.target_pieces)} PCS</td>
+        <td class="text-right data-tabular font-bold">${Math.round(b.target_pieces)} PCS</td>
         <td class="text-right data-tabular">${Number(b.bulk_kg).toFixed(3)} KG</td>
         <td class="text-center"><span class="status-chip ${isCancelled ? 'chip-error' : 'chip-success'}">${b.status}</span></td>
         <td class="text-right data-tabular">${b.material_lines} lines</td>
@@ -1126,10 +1608,10 @@ function openBmrModal(batchId) {
               <td class="data-tabular" style="font-weight: 600;">${it.code}</td>
               <td><strong>${it.name}</strong></td>
               <td class="text-right data-tabular">${it.formula_pct}</td>
-              <td class="text-right data-tabular" style="font-weight: 700;">${it.target_display}</td>
+              <td class="text-right data-tabular font-bold">${it.target_display}</td>
               <td class="text-center"><span class="bmr-box-entry"></span></td>
               <td class="text-center"><span class="bmr-box-entry"></span></td>
-              <td class="data-tabular" style="font-size: 11px;">${it.lot_no ? it.lot_no : '<span class="bmr-box-entry" style="width: 100%;"></span>'}</td>
+              <td class="data-tabular helper-text">${it.lot_no ? it.lot_no : '<span class="bmr-box-entry" style="width: 100%;"></span>'}</td>
               <td class="text-center"><span class="bmr-box-entry" style="min-width: 45px;"></span></td>
               <td class="text-center"><span class="bmr-check-box"></span></td>
             </tr>
@@ -1207,15 +1689,15 @@ function openBmrModal(batchId) {
       <div class="bmr-signoff-grid">
         <div class="bmr-signoff-card">
           <div class="bmr-signoff-title">1. Bulk Yield Reconciliation</div>
-          <div style="font-size: 11px; margin-bottom: 4px;">Theoretical Bulk: <strong>${bulk_kg.toFixed(3)} KG</strong></div>
-          <div style="font-size: 11px; margin-bottom: 4px;">Theoretical Units: <strong>${pieces} PCS</strong></div>
-          <div style="font-size: 11px; margin-bottom: 4px;">Actual Bulk Yield: <strong>________ KG</strong></div>
-          <div style="font-size: 11px;">Yield Efficiency: <strong>________ %</strong></div>
+          <div class="field-hint">Theoretical Bulk: <strong>${bulk_kg.toFixed(3)} KG</strong></div>
+          <div class="field-hint">Theoretical Units: <strong>${pieces} PCS</strong></div>
+          <div class="field-hint">Actual Bulk Yield: <strong>________ KG</strong></div>
+          <div class="helper-text">Yield Efficiency: <strong>________ %</strong></div>
         </div>
         <div class="bmr-signoff-card">
           <div class="bmr-signoff-title">2. Compounding Operator</div>
-          <div style="font-size: 11px; margin-bottom: 4px;">Dispensed & Mixed By: <strong>${operator}</strong></div>
-          <div style="font-size: 11px; margin-bottom: 4px;">Run Date: <strong>${dateStr}</strong></div>
+          <div class="field-hint">Dispensed & Mixed By: <strong>${operator}</strong></div>
+          <div class="field-hint">Run Date: <strong>${dateStr}</strong></div>
           <div class="bmr-signoff-line">
             <span>Operator Signature</span>
             <span>Date</span>
@@ -1223,8 +1705,8 @@ function openBmrModal(batchId) {
         </div>
         <div class="bmr-signoff-card">
           <div class="bmr-signoff-title">3. Quality Control (QC) Release</div>
-          <div style="font-size: 11px; margin-bottom: 4px;">Appearance / Odor: <strong>[ ] PASS  [ ] FAIL</strong></div>
-          <div style="font-size: 11px; margin-bottom: 4px;">Fill Weight Inspection: <strong>[ ] PASS</strong></div>
+          <div class="field-hint">Appearance / Odor: <strong>[ ] PASS  [ ] FAIL</strong></div>
+          <div class="field-hint">Fill Weight Inspection: <strong>[ ] PASS</strong></div>
           <div class="bmr-signoff-line">
             <span>QC Manager Signature</span>
             <span>Date</span>
@@ -1345,8 +1827,8 @@ async function openReorderModal() {
 
     return `
       <tr>
-        <td class="data-tabular" style="font-weight: 700;">${item.code}</td>
-        <td><strong>${item.description}</strong></td>
+        <td class="data-tabular font-bold">${item.code}</td>
+        <td class="cell-truncate" title="${item.description}"><strong>${item.description}</strong></td>
         <td><span class="label-caps">${catStr}</span></td>
         <td class="text-right data-tabular">${Number(item.stock_on_hand).toFixed(item.uom === 'KG' ? 2 : 0)} ${item.uom}</td>
         <td class="text-right data-tabular">${Number(item.total_committed).toFixed(item.uom === 'KG' ? 2 : 0)} ${item.uom}</td>

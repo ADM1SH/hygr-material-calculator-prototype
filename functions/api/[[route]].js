@@ -7,7 +7,6 @@
  * - POST /api/plan/batch/add
  * - POST /api/plan/batch/update
  * - POST /api/plan/batch/delete
- * - POST /api/plan/reset_week
  * - POST /api/batch/execute
  * - POST /api/batch/cancel
  * - POST /api/role
@@ -628,15 +627,19 @@ export async function onRequest(context) {
       const fg_code = String(data.fg_code || "FG-LB015/109").trim();
       const day = String(data.day || "Monday").trim();
       const unit_type = String(data.unit_type || "BULK_KG").toUpperCase();
-      const target_qty = Number(data.target_qty || 5.0);
+      // `??` not `||`, so an explicit 0 reaches the guard instead of becoming 5.0.
+      const target_qty = Number(data.target_qty ?? 5.0);
+      if (!(target_qty > 0)) throw new Error("Target quantity must be greater than zero");
       const prod = GLOBAL_STATE.products[fg_code] || { unit_weight_grams: 5.0 };
       const unit_weight = prod.unit_weight_grams || 5.0;
+      // F1: one pot is the product's own SFG batch weight, not a fixed 1.5 KG.
+      const sfg_weight = prod.sfg_batch_weight_grams || 1500.0;
 
       let bulk_kg = target_qty;
       let pieces = Math.round((bulk_kg * 1000.0) / unit_weight);
 
       if (unit_type === "POTS") {
-        bulk_kg = target_qty * 1.5;
+        bulk_kg = target_qty * (sfg_weight / 1000.0);
         pieces = Math.round((bulk_kg * 1000.0) / unit_weight);
       } else if (unit_type === "PIECES") {
         pieces = Math.round(target_qty);
@@ -682,11 +685,12 @@ export async function onRequest(context) {
 
           const prod = GLOBAL_STATE.products[b.fg_code] || { unit_weight_grams: 5.0 };
           const unit_weight = prod.unit_weight_grams || 5.0;
+          const sfg_weight = prod.sfg_batch_weight_grams || 1500.0;
 
           if (data.target_qty !== undefined && Number(data.target_qty) > 0) {
             b.target_qty = Number(data.target_qty);
             if (b.unit_type === "POTS") {
-              b.target_bulk_kg = b.target_qty * 1.5;
+              b.target_bulk_kg = b.target_qty * (sfg_weight / 1000.0);
               b.target_pieces = Math.round((b.target_bulk_kg * 1000.0) / unit_weight);
             } else if (b.unit_type === "PIECES") {
               b.target_pieces = Math.round(b.target_qty);
@@ -722,13 +726,6 @@ export async function onRequest(context) {
     } catch (e) {
       return jsonResponse({ error: e.message }, 400);
     }
-  }
-
-  if (path === "/api/plan/reset_week" && method === "POST") {
-    const init = getInitialState();
-    GLOBAL_STATE.weekly_plan = init.weekly_plan;
-    GLOBAL_STATE.next_batch_id = init.weekly_plan.length + 1;
-    return jsonResponse(getStateResponse());
   }
 
   if (path === "/api/batch/execute" && method === "POST") {

@@ -44,6 +44,32 @@
     </header>
 
     <!-- ==========================================
+         TOP-LEVEL PRIMARY NAVIGATION BAR (DESIGN.md)
+         ========================================== -->
+    <nav class="top-nav-bar" aria-label="Primary Navigation">
+      <button class="top-nav-btn active" id="top-nav-btn-schedule" onclick="switchView('schedule')">
+        <span>1. Production Schedule</span>
+        <span class="badge-count" id="top-badge-schedule-count">0</span>
+      </button>
+      <button class="top-nav-btn" id="top-nav-btn-bom" onclick="switchView('bom')">
+        <span>2. BOM & Material Demand</span>
+        <span class="badge-count" id="top-badge-shortage-count">0</span>
+      </button>
+      <button class="top-nav-btn" id="top-nav-btn-ledger" onclick="switchView('ledger')">
+        <span>3. Stock Card Ledger</span>
+        <span class="badge-count" id="top-badge-ledger-count">0</span>
+      </button>
+      <button class="top-nav-btn" id="top-nav-btn-master" onclick="switchView('master')">
+        <span>4. Stock Health & SCM Radar</span>
+        <span class="badge-count" id="top-badge-reorder-count">0</span>
+      </button>
+      <button class="top-nav-btn" id="top-nav-btn-batches" onclick="switchView('batches')">
+        <span>5. Execution History</span>
+        <span class="badge-count" id="top-badge-batch-count">0</span>
+      </button>
+    </nav>
+
+    <!-- ==========================================
          MAIN SPLIT VIEW (25% Left / 75% Right)
          ========================================== -->
     <div class="split-view-container">
@@ -51,46 +77,26 @@
       <!-- LEFT PANE: NAVIGATION & BATCH ENTRY (25%) -->
       <aside class="left-pane">
 
-        <!-- Navigation Tabs Menu -->
-        <nav class="nav-tabs-menu" aria-label="System Views">
-          <button class="nav-tab-btn active" id="tab-btn-bom" onclick="switchView('bom')">
-            <span>1. Weekly Planner & BOM</span>
-            <span class="badge-count" id="badge-shortage-count">0</span>
-          </button>
-          <button class="nav-tab-btn" id="tab-btn-ledger" onclick="switchView('ledger')">
-            <span>2. Stock Card Ledger</span>
-            <span class="badge-count" id="badge-ledger-count">0</span>
-          </button>
-          <button class="nav-tab-btn" id="tab-btn-master" onclick="switchView('master')">
-            <span>3. Stock Health & SCM Radar</span>
-            <span class="badge-count" id="badge-reorder-count">0</span>
-          </button>
-          <button class="nav-tab-btn" id="tab-btn-batches" onclick="switchView('batches')">
-            <span>4. Execution History</span>
-            <span class="badge-count" id="badge-batch-count">0</span>
-          </button>
-        </nav>
-
         <!-- Weekly Plan Feasibility & Summary Card -->
         <div class="card-level-1">
           <div class="card-header">
             <span class="card-title">Weekly Schedule Feasibility</span>
             <span class="status-chip chip-success" id="feasibility-chip">FEASIBLE</span>
           </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-            <span class="body-md" style="color: var(--on-surface-variant);">Active Batches:</span>
-            <span class="data-tabular" id="quick-batches-count" style="font-weight: 700;">0</span>
+          <div class="flex-between">
+            <span class="body-md text-muted">Active Batches:</span>
+            <span class="data-tabular font-bold" id="quick-batches-count">0</span>
           </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-            <span class="body-md" style="color: var(--on-surface-variant);">Total Bulk Mass:</span>
-            <span class="data-tabular" id="quick-bulk-total" style="font-weight: 700;">0.000 KG</span>
+          <div class="flex-between">
+            <span class="body-md text-muted">Total Bulk Mass:</span>
+            <span class="data-tabular font-bold" id="quick-bulk-total">0.000 KG</span>
           </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-            <span class="body-md" style="color: var(--on-surface-variant);">Total Finished Units:</span>
-            <span class="data-tabular" id="quick-pcs-total" style="font-weight: 700;">0 PCS</span>
+          <div class="flex-between">
+            <span class="body-md text-muted">Total Finished Units:</span>
+            <span class="data-tabular font-bold" id="quick-pcs-total">0 PCS</span>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 6px; border-top: 1px solid var(--outline-variant);">
-            <span class="body-md" style="color: var(--on-surface-variant);">Shortage Status:</span>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 4px; border-top: 1px solid var(--outline-variant);">
+            <span class="body-md text-muted">Shortage Status:</span>
             <span class="status-chip chip-success" id="quick-shortage-badge">100% SUFFICIENT</span>
           </div>
         </div>
@@ -120,7 +126,7 @@
             </select>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div class="form-row-2">
             <div class="form-group">
               <label class="form-label" for="input-batch-unit">Planning Unit</label>
               <select class="select-field" id="input-batch-unit" onchange="onBatchFormUnitChange(this.value)">
@@ -139,7 +145,7 @@
             Equivalent: 51.000 KG Bulk Mass &bull; 1,275 Pieces
           </p>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div class="form-row-2">
             <div class="form-group">
               <label class="form-label" for="input-batch-buffer">Yield Buffer (%)</label>
               <input type="number" class="input-field data-tabular" id="input-batch-buffer" value="0.0" min="0" max="25" step="0.5">
@@ -150,22 +156,9 @@
             </div>
           </div>
 
-          <button class="btn btn-primary" style="width: 100%; margin-top: 6px;" onclick="submitAddBatch()">
+          <button class="btn btn-primary" style="width: 100%; margin-top: 4px;" onclick="submitAddBatch()">
             + Insert into Weekly Plan
           </button>
-        </div>
-
-        <!-- Schedule Management Actions -->
-        <div class="card-level-1">
-          <div class="card-header">
-            <span class="card-title">Schedule Tools</span>
-          </div>
-          <button class="btn btn-secondary btn-sm" style="width: 100%; margin-bottom: 6px;" onclick="resetToXiaoSchedule()">
-            ↺ Load Xiao's Default Schedule
-          </button>
-          <p style="font-size: 11px; color: var(--on-surface-variant);">
-            Pre-populates verified schedule entries across Monday to Friday from workbook.
-          </p>
         </div>
 
       </aside>
@@ -173,17 +166,103 @@
       <!-- RIGHT PANE: MAIN WORKSPACE (75%) -->
       <main class="right-pane">
 
-        <!-- VIEW 1: WEEKLY PLANNER, RUNOUT TIMELINE & AGGREGATED BOM -->
-        <section id="view-bom" class="view-panel">
+        <!-- VIEW 1: DEDICATED PRODUCTION SCHEDULE & CALENDAR -->
+        <section id="view-schedule" class="view-panel">
+          <!-- Schedule Toolbar -->
+          <div class="schedule-toolbar">
+            <div class="schedule-toolbar-left">
+              <!-- View Mode Segmented Control -->
+              <div class="segmented-control" role="group" aria-label="Schedule View Mode">
+                <button type="button" class="segmented-btn active" id="sched-view-week" onclick="setScheduleViewMode('week')">
+                  Week Matrix
+                </button>
+                <button type="button" class="segmented-btn" id="sched-view-month" onclick="setScheduleViewMode('month')">
+                  Month View
+                </button>
+                <button type="button" class="segmented-btn" id="sched-view-queue" onclick="setScheduleViewMode('queue')">
+                  Queue Ledger
+                </button>
+              </div>
+
+              <!-- Date Stepper -->
+              <div class="stepper-container">
+                <button type="button" class="stepper-btn" onclick="stepScheduleDate(-1)" title="Previous period">&lsaquo;</button>
+                <span class="stepper-label" id="schedule-stepper-label">September 2026</span>
+                <button type="button" class="stepper-btn" onclick="stepScheduleDate(1)" title="Next period">&rsaquo;</button>
+              </div>
+            </div>
+
+            <div class="schedule-toolbar-right">
+              <!-- Recipe Filter -->
+              <select class="select-field" id="sched-filter-recipe" style="width: auto;" onchange="onScheduleFilterChange()">
+                <option value="ALL">Recipe: All</option>
+              </select>
+
+              <!-- Primary Add Batch Action -->
+              <button type="button" class="btn btn-primary" onclick="openNewBatchDrawer()">
+                + Schedule Batch
+              </button>
+            </div>
+          </div>
+
+          <!-- Chronological Day-by-Day Runout Timeline Strip -->
+          <div class="timeline-strip" id="timeline-container">
+            <!-- Populated dynamically via JS: Monday to Saturday cards with runout status -->
+          </div>
+
+          <!-- Calendar Matrix View (Default: 7-Column Grid) -->
+          <div id="schedule-calendar-container" class="calendar-matrix-container">
+            <div class="calendar-matrix-header">
+              <div class="calendar-matrix-header-col">Mon</div>
+              <div class="calendar-matrix-header-col">Tue</div>
+              <div class="calendar-matrix-header-col">Wed</div>
+              <div class="calendar-matrix-header-col">Thu</div>
+              <div class="calendar-matrix-header-col">Fri</div>
+              <div class="calendar-matrix-header-col">Sat</div>
+              <div class="calendar-matrix-header-col">Sun</div>
+            </div>
+            <div class="calendar-matrix-grid" id="calendar-matrix-grid">
+              <!-- Populated dynamically via JS -->
+            </div>
+          </div>
+
+          <!-- Queue Ledger View (Tabular Alternative Mode) -->
+          <div id="schedule-queue-container" style="display: none;">
+            <div class="table-wrapper">
+              <table class="queue-table" id="schedule-table">
+                <thead>
+                  <tr>
+                    <th>Day / Date</th>
+                    <th>Batch / BMR #</th>
+                    <th>Product Code</th>
+                    <th>Finished Good Name</th>
+                    <th>Unit</th>
+                    <th class="text-right">Target Qty</th>
+                    <th class="text-right">Bulk Mass</th>
+                    <th class="text-right">Pieces</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="schedule-table-body">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW 2: DEDICATED BOM & MATERIAL DEMAND RECONCILIATION -->
+        <section id="view-bom" class="view-panel" style="display: none;">
           <div class="table-toolbar">
             <div>
-              <h2 class="headline-md">Weekly Multi-SKU Production Plan & Material Requirements</h2>
+              <h2 class="headline-md">BOM & Material Demand Reconciliation</h2>
               <p class="body-md" style="color: var(--on-surface-variant); font-size: 13px;">
-                Chronological stock runout simulation across Monday to Saturday &bull; Prevents mid-week stockouts
+                Aggregated component requirements vs live stock on hand &bull; Multi-batch allocation drill-down
               </p>
             </div>
-            <div style="display: flex; gap: 8px;">
-              <button class="btn btn-primary btn-sm" onclick="openReorderModal()">📋 Draft PO Reorder List</button>
+            <div class="flex-row">
+              <button class="btn btn-primary btn-sm" onclick="openReorderModal()">Draft PO Reorder List</button>
               <button class="btn btn-secondary btn-sm" onclick="exportData('inventory')">Export Requirements</button>
             </div>
           </div>
@@ -194,45 +273,11 @@
             <button class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 11px;" onclick="document.getElementById('bom-status-banner').style.display='none'">Dismiss</button>
           </div>
 
-          <!-- 1. Day-by-Day Runout Timeline Strip -->
-          <div class="timeline-strip" id="timeline-container">
-            <!-- Populated dynamically via JS: Monday to Saturday cards -->
-          </div>
-
-          <!-- 2. Active Weekly Production Schedule Grid -->
-          <div style="margin-bottom: 24px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <h3 class="title-sm" style="text-transform: uppercase; letter-spacing: 0.04em;">1. Planned Production Batches</h3>
-              <span class="label-caps" id="weekly-plan-count-label" style="color: var(--on-surface-variant);">11 Batches</span>
-            </div>
-            <div class="table-wrapper">
-              <table class="data-table" id="schedule-table">
-                <thead>
-                  <tr>
-                    <th>Day</th>
-                    <th>Batch / BMR #</th>
-                    <th>Product Code</th>
-                    <th>Finished Good Name</th>
-                    <th>Unit</th>
-                    <th class="text-right">Target Qty</th>
-                    <th class="text-right">Bulk Mass</th>
-                    <th class="text-right">Pieces</th>
-                    <th class="text-center">Status</th>
-                    <th class="text-center">Execution Action</th>
-                  </tr>
-                </thead>
-                <tbody id="schedule-table-body">
-                  <!-- Dynamically populated -->
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- 3. Aggregated Raw Material Requirements & Live Stock Balance -->
+          <!-- Aggregated Raw Material Requirements Table -->
           <div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
               <div>
-                <h3 class="title-sm" style="text-transform: uppercase; letter-spacing: 0.04em;">2. Aggregated Raw Material Requirements & Shortage Radar</h3>
+                <h3 class="title-sm" style="text-transform: uppercase; letter-spacing: 0.04em;">Component Requirements & Shortage Radar</h3>
                 <p style="font-size: 12px; color: var(--on-surface-variant); margin-top: 2px;">
                   Click any material line to view the drill-down batch allocation breakdown. Shortages sort to top.
                 </p>
@@ -270,7 +315,6 @@
               </div>
             </div>
           </div>
-
         </section>
 
         <!-- VIEW 2: STOCK CARD AUDIT LEDGER -->
@@ -282,13 +326,13 @@
                 Complete historical record of batch production deductions, scale variances, receipts, and manual adjustments
               </p>
             </div>
-            <div style="display: flex; gap: 8px;">
+            <div class="flex-row">
               <button class="btn btn-secondary btn-sm" onclick="exportData('ledger')">Export Ledger CSV</button>
               <button class="btn btn-primary btn-sm" onclick="openStockModal()">Record Transaction</button>
             </div>
           </div>
 
-          <div class="card-level-1" style="padding: 8px 12px; margin-bottom: 12px; display: flex; gap: 12px; align-items: center;">
+          <div class="card-level-1" style="padding: 8px 8px; margin-bottom: 8px; display: flex; gap: 8px; align-items: center;">
             <div class="search-input-wrapper">
               <input type="text" class="input-field" id="ledger-search" placeholder="Search by Code, Item, Batch #, or Operator..." oninput="filterLedger(this.value)">
             </div>
@@ -332,8 +376,8 @@
                 Evaluates physical stock and weekly committed usage against supplier lead times
               </p>
             </div>
-            <div style="display: flex; gap: 8px;">
-              <button class="btn btn-primary btn-sm" onclick="openReorderModal()">📋 Draft PO Reorder List</button>
+            <div class="flex-row">
+              <button class="btn btn-primary btn-sm" onclick="openReorderModal()">Draft PO Reorder List</button>
               <button class="btn btn-secondary btn-sm" onclick="exportData('inventory')">Export Health Report</button>
             </div>
           </div>
@@ -341,22 +385,22 @@
           <div class="kpi-grid">
             <div class="kpi-card">
               <div class="kpi-label">Registered Materials</div>
-              <div class="kpi-value" id="kpi-total-items">0</div>
+              <div class="display-lg" id="kpi-total-items">0</div>
               <div class="kpi-subtext">Active master materials</div>
             </div>
             <div class="kpi-card">
               <div class="kpi-label">Reorder Now (Deficit)</div>
-              <div class="kpi-value" id="kpi-reorder-count" style="color: var(--error);">0</div>
+              <div class="display-lg" id="kpi-reorder-count" style="color: var(--error);">0</div>
               <div class="kpi-subtext">Cover Days &lt; Lead Time</div>
             </div>
             <div class="kpi-card">
               <div class="kpi-label">Low Stock (Buffer)</div>
-              <div class="kpi-value" id="kpi-low-count" style="color: var(--warning);">0</div>
+              <div class="display-lg" id="kpi-low-count" style="color: var(--warning);">0</div>
               <div class="kpi-subtext">Within 3-week lead buffer</div>
             </div>
             <div class="kpi-card">
               <div class="kpi-label">Weekly Committed Bulk</div>
-              <div class="kpi-value" id="kpi-total-committed">0.0 KG</div>
+              <div class="display-lg" id="kpi-total-committed">0.0 KG</div>
               <div class="kpi-subtext">Scheduled in active week</div>
             </div>
           </div>
@@ -441,11 +485,11 @@
       </div>
 
       <div class="modal-body">
-        <div class="alert-banner" style="margin-bottom: 12px;">
+        <div class="alert-banner" style="margin-bottom: 8px;">
           <span><strong>Scale Variance Audit:</strong> Theoretical amounts are populated from the formulation. Input true scale weights to capture mixing variances and swap substitute materials if needed.</span>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
           <div class="form-group" style="margin-bottom: 0;">
             <label class="form-label" for="staging-batch-ref">Batch / Work Order #</label>
             <input type="text" class="input-field data-tabular" id="staging-batch-ref">
@@ -476,7 +520,7 @@
           </table>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
           <button class="btn btn-secondary btn-sm" onclick="addStagingRow()">
             + Add Extra Material Line
           </button>
@@ -510,12 +554,12 @@
           </select>
         </div>
 
-        <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 12px;" class="card-level-1">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px;" class="card-level-1">
           <span>Current SOH: <strong id="modal-stock-soh" class="data-tabular">0.000 KG</strong></span>
           <span>Lead Time: <strong id="modal-stock-lead" class="data-tabular">0 days</strong></span>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-row-2">
           <div class="form-group">
             <label class="form-label">Transaction Direction</label>
             <select class="select-field" id="modal-stock-type">
@@ -540,7 +584,7 @@
           </select>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-row-2">
           <div class="form-group">
             <label class="form-label" for="modal-stock-ref">Reference Document #</label>
             <input type="text" class="input-field data-tabular" id="modal-stock-ref" placeholder="e.g. PO#9821, GRN-104">
@@ -569,13 +613,13 @@
   <div class="modal-backdrop" id="modal-bmr-sheet" onclick="if(event.target === this) closeBmrModal()">
     <div class="modal-dialog" style="max-width: 960px; width: 95%;">
       <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
           <span class="card-title">Batch Manufacturing Record (BMR) Floor Scaling Sheet</span>
           <span class="status-chip chip-neutral" id="bmr-modal-badge">PRINT READY</span>
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
           <button class="btn btn-primary btn-sm" onclick="printBmrSheet()">
-            🖨 Print Floor Sheet (A4)
+            Print Floor Sheet (A4)
           </button>
           <button class="modal-close-btn" onclick="closeBmrModal()">&times;</button>
         </div>
@@ -585,7 +629,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeBmrModal()">Close Preview</button>
-        <button class="btn btn-primary" onclick="printBmrSheet()">🖨 Print Floor Sheet (A4)</button>
+        <button class="btn btn-primary" onclick="printBmrSheet()">Print Floor Sheet (A4)</button>
       </div>
     </div>
   </div>
@@ -647,15 +691,113 @@
       </div>
       <div class="modal-footer" style="display: flex; justify-content: space-between;">
         <button class="btn btn-secondary" onclick="copyReorderSummary()">
-          📋 Copy WhatsApp / Email Text
+          Copy WhatsApp / Email Text
         </button>
-        <div style="display: flex; gap: 8px;">
+        <div class="flex-row">
           <button class="btn btn-secondary" onclick="closeReorderModal()">Close</button>
-          <button class="btn btn-primary" onclick="exportReorderCsv()">📥 Export Reorder PO CSV</button>
+          <button class="btn btn-primary" onclick="exportReorderCsv()">Export Reorder PO CSV</button>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- ==========================================
+       SLIDE-OVER BATCH DETAILS DRAWER (460px)
+       ========================================== -->
+  <div class="drawer-backdrop" id="drawer-batch-backdrop" onclick="closeBatchDrawer()"></div>
+  <aside class="slide-over-drawer" id="drawer-batch-details" aria-label="Batch Details Drawer">
+    <div class="drawer-header">
+      <div>
+        <h3 class="drawer-title" id="drawer-batch-title">Batch Details</h3>
+        <p style="font-size: 11px; color: var(--on-surface-variant); margin-top: 2px;" id="drawer-batch-subtitle">
+          Adjust schedule parameters or remove planned batch
+        </p>
+      </div>
+      <button class="drawer-close-btn" onclick="closeBatchDrawer()" title="Close drawer">&times; Close</button>
+    </div>
+    <div class="drawer-body">
+      <input type="hidden" id="drawer-batch-id">
+
+      <div class="form-group">
+        <label class="form-label" for="drawer-batch-day">Production Day</label>
+        <select class="select-field" id="drawer-batch-day">
+          <option value="Monday">Monday</option>
+          <option value="Tuesday">Tuesday</option>
+          <option value="Wednesday">Wednesday</option>
+          <option value="Thursday">Thursday</option>
+          <option value="Friday">Friday</option>
+          <option value="Saturday">Saturday</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="drawer-batch-fg">Product Recipe</label>
+        <select class="select-field" id="drawer-batch-fg" onchange="onDrawerFgChange(this.value)">
+          <!-- Populated via JS -->
+        </select>
+      </div>
+
+      <div class="form-row-2">
+        <div class="form-group">
+          <label class="form-label" for="drawer-batch-unit">Planning Unit</label>
+          <select class="select-field" id="drawer-batch-unit" onchange="onDrawerUnitChange(this.value)">
+            <option value="BULK_KG">Bulk KG</option>
+            <option value="POTS">Pots (1.5kg)</option>
+            <option value="PIECES">Pieces</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="drawer-batch-qty">Target Quantity</label>
+          <input type="number" class="input-field data-tabular" id="drawer-batch-qty" min="0.1" step="any" oninput="updateDrawerPreview()">
+        </div>
+      </div>
+
+      <p id="drawer-batch-equiv-preview" style="font-size: 11px; color: var(--on-surface-variant); margin-top: -4px; margin-bottom: 8px;">
+        Equivalent: 0.000 KG Bulk Mass &bull; 0 Pieces
+      </p>
+
+      <div class="form-row-2">
+        <div class="form-group">
+          <label class="form-label" for="drawer-batch-buffer">Yield Buffer (%)</label>
+          <input type="number" class="input-field data-tabular" id="drawer-batch-buffer" min="0" max="25" step="0.5" oninput="updateDrawerPreview()">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="drawer-batch-ref">Batch / BMR #</label>
+          <input type="text" class="input-field data-tabular" id="drawer-batch-ref">
+        </div>
+      </div>
+
+      <div class="form-group" id="drawer-status-group">
+        <label class="form-label">Execution Status &amp; Work Order</label>
+        <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
+          <span class="status-chip chip-success" id="drawer-batch-status-chip">SCHEDULED</span>
+          <button type="button" class="btn btn-secondary btn-sm" id="drawer-btn-bmr" onclick="printBmrFromDrawer()">
+            Open BMR Work Order
+          </button>
+        </div>
+      </div>
+
+      <div class="card-level-1" style="background-color: var(--surface-container-low); padding: 8px; margin-top: 16px;">
+        <div class="card-title" style="font-size: 11px; margin-bottom: 4px;">Compounding Scaling Specifications</div>
+        <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+          <span class="text-muted">Recipe SFG Standard:</span>
+          <span class="data-tabular font-bold" id="drawer-batch-sfg-standard">1,500 g</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 12px;">
+          <span class="text-muted">Unit Piece Weight:</span>
+          <span class="data-tabular font-bold" id="drawer-batch-unit-weight">5.0 g</span>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button type="button" class="btn btn-danger btn-sm" id="drawer-btn-delete" onclick="deleteBatchFromDrawer()">
+        ✕ Delete Batch
+      </button>
+      <button type="button" class="btn btn-primary btn-sm" id="drawer-btn-save" onclick="saveBatchFromDrawer()">
+        Save Changes
+      </button>
+    </div>
+  </aside>
 
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toast-container"></div>

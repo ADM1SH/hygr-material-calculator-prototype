@@ -859,8 +859,6 @@ class RequestHandler(SimpleHTTPRequestHandler):
             self.handle_update_batch(data)
         elif path == "/api/plan/batch/delete":
             self.handle_delete_batch(data)
-        elif path == "/api/plan/reset_week":
-            self.handle_reset_week()
         elif path == "/api/batch/execute":
             self.handle_execute_batch(data)
         elif path == "/api/batch/cancel":
@@ -903,12 +901,23 @@ class RequestHandler(SimpleHTTPRequestHandler):
         fg_code = str(data.get("fg_code", "FG-LB015/109")).strip()
         day = str(data.get("day", "Monday")).strip()
         unit_type = str(data.get("unit_type", "BULK_KG")).strip().upper()
-        target_qty = float(data.get("target_qty", 5.0))
+        try:
+            target_qty = float(data.get("target_qty", 5.0))
+        except (TypeError, ValueError):
+            target_qty = 0.0
+        # A batch with no positive quantity is not a plan. Refuse it rather than
+        # storing a zero or negative run the deduction would later credit to stock.
+        if not target_qty > 0:
+            self.send_error(400, "Target quantity must be greater than zero")
+            return
+
         prod = APP_STATE["products"].get(fg_code, {"unit_weight_grams": 5.0})
         unit_weight = prod.get("unit_weight_grams", 5.0)
+        # F1: one pot is the product's own SFG batch weight, not a fixed 1.5 KG.
+        sfg_weight = prod.get("sfg_batch_weight_grams", 1500.0)
 
         if unit_type == "POTS":
-            bulk_kg = target_qty * 1.5
+            bulk_kg = target_qty * (sfg_weight / 1000.0)
             pieces = int(round((bulk_kg * 1000.0) / unit_weight))
         elif unit_type == "PIECES":
             pieces = int(target_qty)
@@ -956,11 +965,12 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 unit_type = b.get("unit_type", "BULK_KG")
                 prod = APP_STATE["products"].get(b["fg_code"], {"unit_weight_grams": 5.0})
                 unit_weight = prod.get("unit_weight_grams", 5.0)
+                sfg_weight = prod.get("sfg_batch_weight_grams", 1500.0)
 
                 if "target_qty" in data and float(data["target_qty"]) > 0:
                     b["target_qty"] = float(data["target_qty"])
                     if unit_type == "POTS":
-                        b["target_bulk_kg"] = b["target_qty"] * 1.5
+                        b["target_bulk_kg"] = b["target_qty"] * (sfg_weight / 1000.0)
                         b["target_pieces"] = int(round((b["target_bulk_kg"] * 1000.0) / unit_weight))
                     elif unit_type == "PIECES":
                         b["target_pieces"] = int(b["target_qty"])
@@ -996,11 +1006,6 @@ class RequestHandler(SimpleHTTPRequestHandler):
             return
 
         APP_STATE["weekly_plan"] = [b for b in APP_STATE["weekly_plan"] if b["id"] != batch_id]
-        self.handle_get_state()
-
-    def handle_reset_week(self):
-        APP_STATE["weekly_plan"] = get_default_weekly_plan()
-        APP_STATE["next_batch_id"] = len(APP_STATE["weekly_plan"]) + 1
         self.handle_get_state()
 
     def handle_execute_batch(self, data):
